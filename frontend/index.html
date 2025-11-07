@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Arena Academy - AI Fighting Coach</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Game Canvas (Phaser will inject here) -->
+        <div id="game-container"></div>
+
+        <!-- Control Panel -->
+        <div id="control-panel">
+            <div class="panel-section">
+                <h2>Agent Arena Academy</h2>
+                <div class="subtitle">Coach Your AI Fighter</div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Coaching Parameters</h3>
+                <div class="coaching-controls">
+                    <div class="slider-group">
+                        <label for="aggression">Aggression: <span id="aggression-value">50</span>%</label>
+                        <input type="range" id="aggression" min="0" max="100" value="50">
+                    </div>
+                    <div class="slider-group">
+                        <label for="caution">Caution: <span id="caution-value">50</span>%</label>
+                        <input type="range" id="caution" min="0" max="100" value="50">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Agent Thoughts</h3>
+                <div id="thought-panel" class="thought-display">
+                    <div class="thought-text">Waiting for first decision...</div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Stats</h3>
+                <div id="stats-panel">
+                    <div class="stat-row">
+                        <span>Run:</span>
+                        <span id="run-number">1</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Decisions:</span>
+                        <span id="decision-count">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Survival:</span>
+                        <span id="survival-time">0s</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <button id="reset-btn" class="btn-primary">Reset Memory</button>
+                <button id="restart-btn" class="btn-secondary">Restart Fight</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load game scripts -->
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
