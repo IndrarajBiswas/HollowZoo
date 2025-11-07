@@ -39,7 +39,7 @@ The API key is stored securely in `backend/.env`:
 
 ```bash
 # backend/.env
-GOOGLE_API_KEY=AIzaSyDcr4EqlDfkOiuYlJyAlym_kgXt04sFj9A
+GOOGLE_API_KEY=your_google_api_key_here
 FLASK_ENV=development
 FLASK_DEBUG=True
 ```
@@ -438,7 +438,7 @@ curl http://localhost:5000/api/coach
 
 **Solution:** Make sure the `.env` file exists in the `backend/` directory with your API key:
 ```bash
-echo 'GOOGLE_API_KEY=AIzaSyDcr4EqlDfkOiuYlJyAlym_kgXt04sFj9A' > backend/.env
+echo 'GOOGLE_API_KEY=your_google_api_key_here' > backend/.env
 ```
 
 ### Error: "No module named 'google.generativeai'"
