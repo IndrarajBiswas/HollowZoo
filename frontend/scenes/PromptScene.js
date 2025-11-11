@@ -30,7 +30,7 @@ class PromptScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        this.add.text(512, 220,
+        this.add.text(512, 210,
             `Level ${this.levelData.id}: ${this.levelData.title}\nBiome: ${this.levelData.biome} • Enemy: ${this.levelData.enemyType}`,
             {
                 fontSize: '18px',
@@ -40,29 +40,34 @@ class PromptScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        // Example prompts
-        const examples = this.add.text(512, 330,
-            'Examples:\n' +
-            '• "Stay defensive until enemy health < 50%, then attack aggressively"\n' +
-            '• "Dodge all attacks, observe patterns, strike when enemy is vulnerable"\n' +
-            '• "Maintain distance, use jump attacks, retreat if health < 40%"',
+        // Example prompts (moved higher)
+        const examples = this.add.text(512, 270,
+            'Examples: "Stay defensive until HP < 50%", "Dodge & observe patterns", "Jump attacks, retreat if HP < 40%"',
             {
-                fontSize: '14px',
+                fontSize: '12px',
                 fontFamily: 'monospace',
                 color: '#8a7a6a',
-                align: 'left',
-                lineSpacing: 8
+                align: 'center',
+                wordWrap: { width: 750 }
             }
         ).setOrigin(0.5);
+
+        // Label for textarea
+        this.add.text(512, 330, 'YOUR TACTICAL INSTRUCTIONS:', {
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            color: '#c4a573',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
 
         // Create HTML textarea for prompt input (better than Phaser text input)
         this.createPromptInput();
 
         // Start Mission button
-        const startButton = this.add.rectangle(512, 660, 300, 60, 0x8a7a6a)
+        const startButton = this.add.rectangle(512, 590, 300, 60, 0x8a7a6a)
             .setInteractive({ useHandCursor: true });
 
-        const startText = this.add.text(512, 660, 'START MISSION', {
+        const startText = this.add.text(512, 590, 'START MISSION', {
             fontSize: '24px',
             fontFamily: 'monospace',
             color: '#1a1a2e',
@@ -96,8 +101,8 @@ class PromptScene extends Phaser.Scene {
         });
 
         // Level modifier summary
-        this.add.text(512, 720, `Enemy difficulty boosts: ${this.describeModifiers(this.levelData.modifiers)}`, {
-            fontSize: '16px',
+        this.add.text(512, 670, `Enemy difficulty boosts: ${this.describeModifiers(this.levelData.modifiers)}`, {
+            fontSize: '15px',
             fontFamily: 'monospace',
             color: '#aa8a4a',
             align: 'center',
@@ -128,10 +133,10 @@ class PromptScene extends Phaser.Scene {
         textarea.style.cssText = `
             position: absolute;
             left: 50%;
-            top: 470px;
+            top: 360px;
             transform: translateX(-50%);
             width: 680px;
-            height: 170px;
+            height: 160px;
             padding: 18px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
@@ -167,7 +172,7 @@ class PromptScene extends Phaser.Scene {
         this.counterEl.style.cssText = `
             position: absolute;
             left: calc(50% + 300px);
-            top: 650px;
+            top: 530px;
             transform: translateX(-50%);
             font-family: 'Courier New', monospace;
             font-size: 12px;
@@ -198,7 +203,7 @@ class PromptScene extends Phaser.Scene {
 
         if (!userPrompt || userPrompt.length < 20) {
             // Flash warning
-            const warning = this.add.text(512, 620,
+            const warning = this.add.text(512, 550,
                 'Please provide more detailed instructions (at least 20 characters)',
                 {
                     fontSize: '16px',

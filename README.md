@@ -48,7 +48,27 @@ HollowZoo/
 └── README.md
 ```
 
-## 🚀 Setup Instructions
+## 🚀 Quick Start (One Command!)
+
+The easiest way to run the entire project with live reloading:
+
+```bash
+# On Linux/Mac
+./dev.sh
+
+# On Windows
+dev.bat
+```
+
+This will:
+- Activate the virtual environment (or create one if needed)
+- Install all dependencies
+- Start both backend and frontend servers
+- Enable live reloading for code changes
+
+Then open your browser to `http://localhost:8000`
+
+## 🔧 Detailed Setup Instructions
 
 ### Prerequisites
 
@@ -169,7 +189,15 @@ After each battle:
 
 Each level increases enemy health, damage, and AI cadence. Unlocks persist per session so you can iterate quickly.
 
-## 🔧 Configuration
+## 🔧 Development & Configuration
+
+### Live Reloading
+
+When using `./dev.sh` or `dev.bat`, both servers support live reloading:
+- **Backend**: Flask's debug mode automatically reloads when you edit Python files
+- **Frontend**: Refresh your browser to see HTML/JS/CSS changes instantly
+
+### Game Configuration
 
 Edit `frontend/config.js` to customize:
 
