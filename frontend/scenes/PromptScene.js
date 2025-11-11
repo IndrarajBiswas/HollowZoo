@@ -40,58 +40,20 @@ class PromptScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        // Example prompts with quick-use buttons (adjusted layout for better fit)
-        this.add.text(512, 260, 'TACTICAL STRATEGIES:', {
-            fontSize: '15px',
-            fontFamily: 'monospace',
-            color: '#c4a573',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        const examplePrompts = [
+        // Example prompts text
+        this.add.text(512, 270,
+            'Example: "Stay defensive until enemy HP < 50%, dodge all attacks, strike when vulnerable, retreat if my HP < 30%"',
             {
-                name: 'Balanced',
-                text: 'Stay at medium range. Mix attacks and dodges. Block when enemy attacks. Retreat if health < 40%.'
-            },
-            {
-                name: 'Aggressive',
-                text: 'Close distance immediately. Chain attacks and jump attacks. Only dodge critical hits. Push forward constantly.'
-            },
-            {
-                name: 'Defensive',
-                text: 'Maintain distance > 80 units. Dodge all attacks. Only strike when enemy is idle or recovering. Play patient.'
-            },
-            {
-                name: 'Tactical',
-                text: 'Observe first 10 seconds. Learn enemy patterns. Counter their moves. Vary attack types for combos.'
-            }
-        ];
-
-        let yPos = 300;
-        examplePrompts.forEach((example, idx) => {
-            const btn = this.add.rectangle(200 + (idx * 230), yPos, 210, 36, 0x2a2a4a)
-                .setInteractive({ useHandCursor: true });
-
-            const label = this.add.text(200 + (idx * 230), yPos, example.name, {
-                fontSize: '15px',
+                fontSize: '13px',
                 fontFamily: 'monospace',
-                color: '#e0e0e0'
-            }).setOrigin(0.5);
-
-            btn.on('pointerover', () => btn.setFillStyle(0x3a3a5a));
-            btn.on('pointerout', () => btn.setFillStyle(0x2a2a4a));
-            btn.on('pointerdown', () => {
-                const textarea = document.getElementById('mission-prompt');
-                if (textarea) {
-                    textarea.value = example.text;
-                    // Trigger input event to update counter
-                    textarea.dispatchEvent(new Event('input'));
-                }
-            });
-        });
+                color: '#8a7a6a',
+                align: 'center',
+                wordWrap: { width: 850 }
+            }
+        ).setOrigin(0.5);
 
         // Label for textarea
-        this.add.text(512, 330, 'YOUR TACTICAL INSTRUCTIONS:', {
+        this.add.text(512, 320, 'YOUR TACTICAL INSTRUCTIONS:', {
             fontSize: '14px',
             fontFamily: 'monospace',
             color: '#c4a573',

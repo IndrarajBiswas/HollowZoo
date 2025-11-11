@@ -87,6 +87,9 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
                     damage *= this.critMultiplier;
                     this.showFloatingText('CRIT!', 0xff6600);
                     this.scene.cameras.main.shake(100, 0.003);
+                    this.createImpactEffect(target.x, target.y, 0xff6600, true);
+                } else {
+                    this.createImpactEffect(target.x, target.y, 0xffffff, false);
                 }
                 target.takeDamage(damage, this.scene);
 
@@ -97,6 +100,7 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
 
                 // Impact feedback
                 this.scene.cameras.main.shake(80, 0.002);
+                this.scene.cameras.main.flash(50, 255, 255, 255, false, 0.15);
             }
         });
 
@@ -122,6 +126,9 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
         this.body.setVelocityX(direction * GameConfig.PLAYER.SPEED);
         this.lastAerialTime = this.scene.time.now;
 
+        // Create trail effect
+        this.createTrailEffect();
+
         this.scene.time.delayedCall(200, () => {
             const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
             if (distance < 90) {
@@ -135,6 +142,9 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
 
                 // Heavy impact for aerial attacks
                 this.scene.cameras.main.shake(150, 0.005);
+                this.scene.cameras.main.flash(80, 100, 170, 255, false, 0.25);
+                this.createImpactEffect(target.x, target.y, 0x00aaff, true);
+                this.createShockwave(target.x, target.y);
             }
         });
 
@@ -325,6 +335,77 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
             multiplier: this.comboDamageMultiplier,
             lastAction: this.lastActionType
         };
+    }
+
+    createImpactEffect(x, y, color, isCrit = false) {
+        if (!this.scene) return;
+
+        const particleCount = isCrit ? 25 : 15;
+        const radius = isCrit ? 60 : 40;
+
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const speed = isCrit ? Phaser.Math.Between(150, 250) : Phaser.Math.Between(100, 180);
+
+            const particle = this.scene.add.circle(x, y, isCrit ? 4 : 3, color, 1);
+            particle.setDepth(100);
+
+            this.scene.tweens.add({
+                targets: particle,
+                x: x + Math.cos(angle) * radius,
+                y: y + Math.sin(angle) * radius,
+                alpha: 0,
+                scale: 0,
+                duration: isCrit ? 500 : 350,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+
+        // Impact flash ring
+        const ring = this.scene.add.circle(x, y, 10, color, 0.6);
+        ring.setDepth(99);
+        this.scene.tweens.add({
+            targets: ring,
+            radius: radius * 1.5,
+            alpha: 0,
+            duration: 400,
+            ease: 'Power2',
+            onComplete: () => ring.destroy()
+        });
+    }
+
+    createShockwave(x, y) {
+        if (!this.scene) return;
+
+        const wave = this.scene.add.circle(x, y, 15, 0x00aaff, 0);
+        wave.setStrokeStyle(4, 0x00aaff, 0.8);
+        wave.setDepth(98);
+
+        this.scene.tweens.add({
+            targets: wave,
+            radius: 100,
+            alpha: 0,
+            duration: 600,
+            ease: 'Cubic.easeOut',
+            onComplete: () => wave.destroy()
+        });
+    }
+
+    createTrailEffect() {
+        if (!this.scene) return;
+
+        const trail = this.scene.add.circle(this.x, this.y, 20, 0x6a8aff, 0.4);
+        trail.setDepth(-1);
+
+        this.scene.tweens.add({
+            targets: trail,
+            alpha: 0,
+            scale: 1.5,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => trail.destroy()
+        });
     }
 
     update() {
