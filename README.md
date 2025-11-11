@@ -1,535 +1,249 @@
-# Agent Arena Academy (AgentWar)
+# 🦘 Hollow Zoo: AI Awakening
 
-An innovative 2D combat game where you don't control the fighter—you **coach** an AI agent powered by Google's Gemini 2.0 Flash AI model. Watch as your AI character "Thunder" learns to fight autonomously, adapting to your coaching style and improving through experience.
+A unique 2D exploration and combat game where you don't directly control your character. Instead, you coach an AI agent (RooKnight) who autonomously navigates a mysterious abandoned zoo overrun by rogue AI kangaroos.
 
-**Train an Agent to Win**
+Inspired by Hollow Knight's atmospheric exploration and powered by Google's Gemini 2.0 Flash AI.
 
-![Project Status](https://img.shields.io/badge/status-active-success.svg)
-![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+## 🎮 Concept
 
-## Table of Contents
+In the depths of an abandoned zoo, AI test subjects have broken free. You guide **RooKnight**, an AI agent who learns and adapts through your coaching. Use "Mentor Runes" to shape their behavior:
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Game](#running-the-game)
-- [API Documentation](#api-documentation)
-- [Project Structure](#project-structure)
-- [Development Guide](#development-guide)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
+- **🩸 Feral** - Increases aggression
+- **🛡️ Cautious** - Enhances defense and caution
+- **🌿 Naturalist** - Boosts curiosity and observation
 
-## Features
+Watch your AI companion make decisions in real-time, learn from battles, and gradually unlock harder arenas through your coaching prompts.
 
-- **AI-Powered Combat**: Google Gemini 2.0 Flash makes real-time combat decisions
-- **Coaching System**: Influence AI behavior through coaching parameters and custom prompts
-- **Learning & Memory**: Agent remembers past decisions and learns from outcomes
-- **Real-time Visualization**: Watch the AI's thought process as it fights
-- **Phaser 3 Game Engine**: Smooth 2D physics and animations
-- **RESTful API**: Flask backend with comprehensive API endpoints
-
-## Architecture
+## 🏗️ Project Structure
 
 ```
-┌─────────────────────┐
-│  Phaser Frontend    │
-│  (JavaScript)       │
-│  - Game rendering   │
-│  - User interface   │
-└──────────┬──────────┘
-           │ HTTP
-           ▼
-┌─────────────────────┐
-│  Flask Backend      │
-│  (Python)           │
-│  - API endpoints    │
-│  - State management │
-└──────────┬──────────┘
-           │ API Call
-           ▼
-┌─────────────────────┐
-│  Google Gemini AI   │
-│  (Gemini 2.0 Flash) │
-│  - Decision making  │
-│  - Strategy         │
-└─────────────────────┘
+HollowZoo/
+├── backend/
+│   ├── app.py              # Flask server with API endpoints
+│   ├── agent_brain.py      # Gemini AI integration & decision logic
+│   ├── world_state.py      # Biome and enemy data management
+│   ├── requirements.txt    # Python dependencies
+│   └── .env.example        # Environment variable template
+│
+├── frontend/
+│   ├── index.html          # Main game page
+│   ├── config.js           # Game configuration & API helpers
+│   ├── main.js             # Phaser game initialization
+│   │
+│   ├── scenes/
+│   │   ├── BootScene.js    # Loading and initialization
+│   │   ├── MenuScene.js    # Main menu
+│   │   ├── ZooScene.js     # Main exploration/combat scene
+│   │   └── NestScene.js    # Boss battle arena
+│   │
+│   ├── entities/
+│   │   ├── RooKnight.js    # Player AI agent
+│   │   └── Kangaroo.js     # Enemy entities
+│   │
+│   └── ui/
+│       ├── MentorRunes.js  # Coaching interface
+│       ├── AIThoughtPanel.js # AI reasoning display
+│       └── HealthBar.js    # Health display component
+│
+└── README.md
 ```
 
-## Prerequisites
+## 🚀 Setup Instructions
 
-- **Python 3.9+**
-- **pip** (Python package manager)
-- **Google AI API Key** ([Get one here](https://ai.google.dev/))
-- **Modern web browser** (Chrome, Firefox, Safari, or Edge)
-- **Git** (for cloning the repository)
+### Prerequisites
 
-## Installation
+- Python 3.8+
+- A Google AI Studio API key (for Gemini 2.0 Flash)
+- Modern web browser
 
-### 1. Clone the Repository
+### Backend Setup
 
+1. Navigate to the backend directory:
 ```bash
-git clone https://github.com/IndrarajBiswas/AgentWar.git
-cd AgentWar
+cd HollowZoo/backend
 ```
 
-### 2. Set Up Backend
-
+2. Create a virtual environment (recommended):
 ```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment
 python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# Activate virtual environment
-# On Linux/Mac:
-source venv/bin/activate
-# On Windows:
-# venv\Scripts\activate
-
-# Install dependencies
+3. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
-
-Create a `.env` file in the `backend/` directory:
-
+4. Configure environment variables:
 ```bash
-cd backend
-cat > .env << EOF
-GOOGLE_API_KEY=your_google_api_key_here
-FLASK_ENV=development
-FLASK_DEBUG=True
-EOF
+cp .env.example .env
 ```
 
-Replace `your_google_api_key_here` with your actual Google AI API key.
-
-**Important**: Never commit your `.env` file to version control!
-
-## Configuration
-
-### Backend Configuration
-
-Edit `backend/.env`:
-
-```bash
-GOOGLE_API_KEY=your_api_key          # Required: Your Google AI API key
-FLASK_ENV=development                 # development or production
-FLASK_DEBUG=True                      # True for development, False for production
+5. Edit `.env` and add your Gemini API key:
+```
+GEMINI_API_KEY=your_actual_api_key_here
 ```
 
-### Frontend Configuration
+Get your API key from: https://aistudio.google.com/app/apikey
 
-The frontend connects to `http://localhost:5000` by default. To change this, edit the API URLs in:
-- `frontend/src/scenes/GameScene.js`
-- `frontend/src/scenes/MenuScene.js`
-
-## Running the Game
-
-### 1. Start the Backend Server
-
+6. Start the Flask server:
 ```bash
-cd backend
-source venv/bin/activate  # On Windows: venv\Scripts\activate
 python app.py
 ```
 
-You should see:
-```
- * Running on http://127.0.0.1:5000
- * Restarting with stat
- * Debugger is active!
-```
+The backend will run on `http://localhost:5000`
 
-### 2. Open the Frontend
+### Frontend Setup
 
-Open `frontend/index.html` in your web browser:
-
+1. Navigate to the frontend directory:
 ```bash
-# On Linux/Mac:
-open frontend/index.html
-
-# On Windows:
-start frontend/index.html
-
-# Or manually open the file in your browser
+cd HollowZoo/frontend
 ```
 
-Alternatively, use a simple HTTP server:
-
+2. Start a local web server:
 ```bash
-# Using Python 3
-cd frontend
+# Using Python's built-in server
 python3 -m http.server 8000
-# Then open http://localhost:8000 in your browser
 
-# Using Node.js (if installed)
-npx http-server frontend -p 8000
+# OR using npm if you have Node.js
+npx http-server -p 8000
 ```
 
-### 3. Play the Game!
-
-1. Adjust coaching sliders (Aggression and Caution)
-2. Optionally set custom coaching prompts via API (see below)
-3. Start the match and watch Thunder fight autonomously
-4. Observe the AI's reasoning in the thought panel
-
-## API Documentation
-
-### Base URL
-
+3. Open your browser and navigate to:
 ```
-http://localhost:5000/api
+http://localhost:8000
 ```
 
-### Endpoints
-
-#### 1. Health Check
-```bash
-GET /api/health
-```
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "message": "Agent Arena Academy API is running"
-}
-```
-
-#### 2. Get AI Decision
-```bash
-POST /api/decide
-```
-
-**Request:**
-```json
-{
-  "agent": {
-    "health": 85,
-    "energy": 60,
-    "onGround": true
-  },
-  "enemy": {
-    "health": 45
-  },
-  "distance": 75,
-  "coaching": {
-    "aggression": 70,
-    "caution": 30
-  },
-  "memory": []
-}
-```
-
-**Response:**
-```json
-{
-  "action": "ATTACK",
-  "reasoning": "Enemy is weak at 45 HP; aggressive coaching suggests pressing the advantage.",
-  "confidence": 0.85
-}
-```
-
-#### 3. Set Custom Coaching
-```bash
-POST /api/coach
-```
-
-**Request:**
-```json
-{
-  "prompt": "Always prioritize defense and only attack when enemy health is below 30%"
-}
-```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Coaching prompt applied",
-  "prompt": "Always prioritize defense and only attack when enemy health is below 30%"
-}
-```
-
-**Example cURL:**
-```bash
-curl -X POST http://localhost:5000/api/coach \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Be very aggressive and attack whenever possible!"}'
-```
-
-#### 4. Get Current Coaching
-```bash
-GET /api/coach
-```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "prompt": "Always prioritize defense and only attack when enemy health is below 30%"
-}
-```
-
-#### 5. Post-Match Reflection
-```bash
-POST /api/reflect
-```
-
-**Request:**
-```json
-{
-  "survival_time": 45.3,
-  "decision_count": 120,
-  "final_hp": 0,
-  "enemy_hp": 25,
-  "memory": [],
-  "coaching": {"aggression": 50, "caution": 50}
-}
-```
-
-#### 6. Reset Memory
-```bash
-POST /api/reset
-```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Memory reset"
-}
-```
-
-### Coaching Examples
-
-```bash
-# Defensive strategy
-curl -X POST http://localhost:5000/api/coach \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Play defensively. Only attack when enemy health is below 30%."}'
-
-# Aggressive strategy
-curl -X POST http://localhost:5000/api/coach \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Be extremely aggressive. Attack whenever possible."}'
-
-# Hit-and-run tactics
-curl -X POST http://localhost:5000/api/coach \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Use hit-and-run tactics. Attack once, then jump away."}'
-```
-
-## Project Structure
-
-```
-AgentWar/
-├── backend/
-│   ├── .env                  # Environment variables (not in git)
-│   ├── app.py               # Flask API server
-│   ├── agent_brain.py       # AI decision-making logic
-│   ├── requirements.txt     # Python dependencies
-│   └── venv/                # Virtual environment (not in git)
-│
-├── frontend/
-│   ├── src/
-│   │   ├── entities/
-│   │   │   ├── Agent.js     # AI-controlled player
-│   │   │   └── Enemy.js     # Opponent logic
-│   │   ├── scenes/
-│   │   │   ├── GameScene.js # Main gameplay
-│   │   │   └── MenuScene.js # Title screen
-│   │   ├── managers/
-│   │   │   └── (future managers)
-│   │   ├── ui/
-│   │   │   └── (future UI components)
-│   │   └── main.js          # Phaser configuration
-│   ├── assets/              # Game assets
-│   ├── index.html           # Main HTML file
-│   └── styles.css           # UI styling
-│
-├── .gitignore              # Git ignore rules
-├── README.md               # This file
-├── PROGRESS.md             # Current progress and next steps
-├── claude.md               # Development guide
-└── GOOGLE_AI_INTEGRATION.md # AI integration documentation
-```
-
-## Development Guide
-
-### Game Mechanics
-
-**Available Actions:**
-1. **ATTACK** - Melee attack (deals ~15 damage, costs 10 energy)
-2. **DEFEND** - Block/reduce damage (minimal energy cost)
-3. **JUMP** - Vertical leap for repositioning (costs 5 energy)
-
-**Energy System:**
-- Max: 100
-- Regenerates: +0.1 per frame (~6/second)
-- Actions cost energy to prevent spam
-
-**Health System:**
-- Agent & Enemy start: 100 HP
-- Death at 0 HP triggers post-match reflection
-
-### AI Decision Timing
-
-- AI makes decisions every **2.5 seconds**
-- Prevents excessive API calls
-- Allows animations to complete
-- Creates strategic, deliberate gameplay
-
-### Adding New Features
-
-1. **Backend**: Add endpoints in `app.py`, logic in `agent_brain.py`
-2. **Frontend**: Add scenes in `scenes/`, entities in `entities/`
-3. **Testing**: Use cURL or Postman to test API endpoints
-
-See `claude.md` for detailed development patterns and best practices.
-
-## Deployment
-
-### Backend Deployment (Production)
-
-#### Option 1: Deploy to Heroku
-
-```bash
-# Install Heroku CLI and login
-heroku login
-
-# Create new Heroku app
-heroku create your-app-name
-
-# Set environment variables
-heroku config:set GOOGLE_API_KEY=your_api_key
-heroku config:set FLASK_ENV=production
-
-# Deploy
-git push heroku main
-```
-
-#### Option 2: Deploy to Railway
-
-1. Visit [Railway.app](https://railway.app/)
-2. Connect your GitHub repository
-3. Add environment variables in Railway dashboard
-4. Deploy automatically on push
-
-#### Option 3: Deploy to your own server
+## 🎯 How to Play
 
-```bash
-# Install gunicorn
-pip install gunicorn
-
-# Run with gunicorn
-cd backend
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
-
-### Frontend Deployment
-
-#### Option 1: GitHub Pages
-
-```bash
-# Push to gh-pages branch
-git subtree push --prefix frontend origin gh-pages
-```
-
-#### Option 2: Netlify
-
-1. Drag and drop `frontend/` folder to [Netlify](https://netlify.com/)
-2. Update API URLs to point to your backend
-
-#### Option 3: Vercel
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-cd frontend
-vercel
-```
-
-**Important**: Update the backend URL in frontend JavaScript files to point to your deployed backend!
-
-## Troubleshooting
-
-### Backend won't start
-
-**Error:** `ModuleNotFoundError: No module named 'flask'`
-- **Solution:** Activate virtual environment and install dependencies:
-  ```bash
-  cd backend
-  source venv/bin/activate
-  pip install -r requirements.txt
-  ```
-
-**Error:** `GOOGLE_API_KEY not found in environment variables`
-- **Solution:** Create `.env` file in `backend/` directory with your API key
-
-### Frontend can't connect to backend
-
-**Error:** `Failed to fetch` or `CORS error`
-- **Solution:** Make sure backend is running on `http://localhost:5000`
-- **Solution:** Check CORS is enabled in `backend/app.py`
-
-### AI makes poor decisions
-
-- Adjust coaching parameters (aggression/caution)
-- Set custom coaching prompts via `/api/coach`
-- Review AI reasoning in the response
-- Check that game state data is being sent correctly
-
-### Port already in use
-
-**Error:** `Address already in use`
-- **Solution:** Kill the process using port 5000:
-  ```bash
-  # On Linux/Mac:
-  lsof -ti:5000 | xargs kill -9
-
-  # On Windows:
-  netstat -ano | findstr :5000
-  taskkill /PID <PID> /F
-  ```
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Credits
-
-- **Game Engine**: [Phaser 3](https://phaser.io/)
-- **AI Model**: [Google Gemini 2.0 Flash](https://ai.google.dev/)
-- **Backend**: [Flask](https://flask.palletsprojects.com/)
-
-## Support
-
-For issues, questions, or suggestions:
-- Open an issue on [GitHub Issues](https://github.com/IndrarajBiswas/AgentWar/issues)
-- Check existing documentation in `claude.md` and `GOOGLE_AI_INTEGRATION.md`
+1. **Start a Mission** - Click "START MISSION" from the main menu
+
+2. **Observe Your AI** - Watch RooKnight (blue kangaroo) make autonomous decisions
+
+3. **Choose a Level** – The main menu lists five handcrafted encounters. Clear a level to unlock the next one.
+
+4. **Brief the Agent** – On the Mission Briefing screen, type natural-language instructions (e.g., “Stay defensive until HP < 40%, then chain jump attacks”). Your prompt is saved between runs for quick tweaks.
+
+5. **Read AI Thoughts** – The bottom panel shows RooKnight's reasoning and confidence level.
+
+6. **Watch & Learn** – Your AI will fight based on your prompt. Win to unlock the next arena; lose to refine your strategy.
+
+## 🧠 AI System
+
+### Decision Making
+
+Every 0.7–0.9 seconds (faster on later levels), the AI:
+1. Analyzes the current game state (health, distance, enemy pose)
+2. Reviews past lessons from memory
+3. Considers your latest tactical prompt
+4. Chooses an action (attack, dodge, retreat, etc.)
+
+> **No API key handy?** Set `USE_FAKE_AI = true` in `frontend/config.js` (default). This uses the built-in simulated agent so you can play the full campaign offline. Flip it back to `false` to reconnect to the Gemini backend.
+
+### Learning Loop
+
+After each battle:
+1. Battle data is collected (damage dealt/taken, actions used)
+2. Gemini generates a reflection
+3. Key lessons are stored in memory (`memory.json`)
+4. Future decisions incorporate these lessons
+
+### Available Actions
+
+- **ATTACK** - Direct melee strike
+- **DODGE** - Quick evasive dash
+- **BLOCK** - Defensive stance
+- **WAIT_AND_OBSERVE** - Study enemy patterns
+- **RETREAT** - Fall back to safety
+- **JUMP_ATTACK** - Aerial assault
+- **MOVE_CLOSER** - Advance toward enemy
+- **MOVE_AWAY** - Create distance
+
+## 🌍 Campaign Levels
+
+1. **Sanctum Patrol** – Tutorial duel; the enemy is slow and fragile so any coherent prompt should win.
+2. **Dome Ambush** – Desert Dome skirmish with aggressive patrols.
+3. **Flooded Vault** – Low-visibility Aqua Vault battle with slippery footing.
+4. **Thorn Garden Hunt** – Poisonous flora forces constant movement.
+5. **King’s Chamber** – Final showdown against the Kangaroo King.
+
+Each level increases enemy health, damage, and AI cadence. Unlocks persist per session so you can iterate quickly.
+
+## 🔧 Configuration
+
+Edit `frontend/config.js` to customize:
+
+- Game dimensions
+- Physics settings
+- AI decision interval
+- Default coaching parameters
+- API endpoint URL
+
+## 📡 API Endpoints
+
+- `GET /api/health` - Health check
+- `POST /api/decide` - Get AI decision for current game state
+- `POST /api/reflect` - Generate post-battle reflection
+- `GET /api/memory` - Retrieve agent memory
+- `POST /api/memory` - Save new memory entry
+- `GET /api/world/biome?name=BiomeName` - Get biome information
+- `GET /api/world/enemies` - Get all enemy types
+
+## 📘 Next Steps
+
+Future ideas (co-op sparring, biome hazards, persistent unlocks) are tracked in [`NEXT_STEPS.md`](NEXT_STEPS.md). Contributions and experiments are welcome!
+
+## 🎨 Future Enhancements
+
+- [ ] Hand-drawn Hollow Knight-style sprites
+- [ ] Multiple biome levels
+- [ ] Boss battle implementation
+- [ ] Procedural coaching suggestions from Gemini
+- [ ] Spectator mode: Two AI agents battle
+- [ ] Moral system: Affect AI personality through encouragement/scolding
+- [ ] Sound effects and atmospheric music
+- [ ] Save/load game states
+- [ ] Achievement system
+
+## 🐛 Troubleshooting
+
+**Backend won't start:**
+- Check that you've activated the virtual environment
+- Verify all dependencies are installed
+- Ensure your Gemini API key is valid
+
+**Frontend shows "API unavailable":**
+- Verify the backend is running on port 5000
+- Check browser console for CORS errors
+- Ensure `API_BASE_URL` in `config.js` is correct
+
+**AI decisions seem random:**
+- The AI works better with a valid Gemini API key
+- Without an API key, it falls back to simple logic
+- Try adjusting coaching parameters for different behaviors
+
+**Game runs slowly:**
+- Close other browser tabs
+- Check browser console for errors
+- Reduce the number of active tweens/animations
+
+## 📝 License
+
+MIT License - Feel free to modify and build upon this project!
+
+## 🙏 Credits
+
+- Concept inspired by Hollow Knight
+- AI powered by Google Gemini 2.0 Flash
+- Built with Phaser 3 game framework
+- Backend with Flask
+
+## 🔗 Links
+
+- [Phaser 3 Documentation](https://photonstorm.github.io/phaser3-docs/)
+- [Google AI Studio](https://aistudio.google.com/)
+- [Flask Documentation](https://flask.palletsprojects.com/)
 
 ---
 
-**Made with AI coaching by [Indraraj Biswas](https://github.com/IndrarajBiswas)**
-
-Happy Coaching! 🎮🤖
+**Made with AI-powered creativity** 🧠🦘

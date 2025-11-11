@@ -10,7 +10,7 @@ class PromptScene extends Phaser.Scene {
         this.cameras.main.setBackgroundColor('#1a1a2e');
 
         // Title
-        this.add.text(512, 100, '🎯 MISSION BRIEFING', {
+        this.add.text(512, 90, '🎯 MISSION BRIEFING', {
             fontSize: '36px',
             fontFamily: 'monospace',
             color: '#8a7a6a',
@@ -18,7 +18,7 @@ class PromptScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Instructions
-        const instructions = this.add.text(512, 170,
+        const instructions = this.add.text(512, 150,
             'Give your AI agent tactical instructions for this mission.\n' +
             'Be specific! Your prompt quality determines success or failure.',
             {
@@ -30,7 +30,7 @@ class PromptScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        this.add.text(512, 250,
+        this.add.text(512, 220,
             `Level ${this.levelData.id}: ${this.levelData.title}\nBiome: ${this.levelData.biome} • Enemy: ${this.levelData.enemyType}`,
             {
                 fontSize: '18px',
@@ -41,7 +41,7 @@ class PromptScene extends Phaser.Scene {
         ).setOrigin(0.5);
 
         // Example prompts
-        const examples = this.add.text(512, 320,
+        const examples = this.add.text(512, 330,
             'Examples:\n' +
             '• "Stay defensive until enemy health < 50%, then attack aggressively"\n' +
             '• "Dodge all attacks, observe patterns, strike when enemy is vulnerable"\n' +
@@ -59,10 +59,10 @@ class PromptScene extends Phaser.Scene {
         this.createPromptInput();
 
         // Start Mission button
-        const startButton = this.add.rectangle(512, 630, 300, 60, 0x8a7a6a)
+        const startButton = this.add.rectangle(512, 660, 300, 60, 0x8a7a6a)
             .setInteractive({ useHandCursor: true });
 
-        const startText = this.add.text(512, 630, 'START MISSION', {
+        const startText = this.add.text(512, 660, 'START MISSION', {
             fontSize: '24px',
             fontFamily: 'monospace',
             color: '#1a1a2e',
@@ -82,7 +82,7 @@ class PromptScene extends Phaser.Scene {
         });
 
         // Back button
-        const backButton = this.add.text(50, 50, '← BACK', {
+        const backButton = this.add.text(40, 50, '← BACK', {
             fontSize: '20px',
             fontFamily: 'monospace',
             color: '#8a7a6a'
@@ -96,7 +96,7 @@ class PromptScene extends Phaser.Scene {
         });
 
         // Level modifier summary
-        this.add.text(512, 700, `Enemy difficulty boosts: ${this.describeModifiers(this.levelData.modifiers)}`, {
+        this.add.text(512, 720, `Enemy difficulty boosts: ${this.describeModifiers(this.levelData.modifiers)}`, {
             fontSize: '16px',
             fontFamily: 'monospace',
             color: '#aa8a4a',
@@ -128,20 +128,21 @@ class PromptScene extends Phaser.Scene {
         textarea.style.cssText = `
             position: absolute;
             left: 50%;
-            top: 420px;
+            top: 470px;
             transform: translateX(-50%);
-            width: 700px;
-            height: 150px;
-            padding: 15px;
+            width: 680px;
+            height: 170px;
+            padding: 18px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             background: #2a2a3e;
             color: #e0e0e0;
             border: 2px solid #8a7a6a;
-            border-radius: 8px;
+            border-radius: 10px;
             resize: none;
             outline: none;
             z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
         `;
 
         textarea.addEventListener('focus', () => {
@@ -165,13 +166,15 @@ class PromptScene extends Phaser.Scene {
         this.counterEl.textContent = `${textarea.value.length} / 360 characters`;
         this.counterEl.style.cssText = `
             position: absolute;
-            left: calc(50% + 330px);
-            top: 580px;
+            left: calc(50% + 300px);
+            top: 650px;
             transform: translateX(-50%);
             font-family: 'Courier New', monospace;
             font-size: 12px;
             color: #c4a573;
             z-index: 1000;
+            text-align: right;
+            width: 120px;
         `;
         document.body.appendChild(this.counterEl);
 
@@ -195,7 +198,7 @@ class PromptScene extends Phaser.Scene {
 
         if (!userPrompt || userPrompt.length < 20) {
             // Flash warning
-            const warning = this.add.text(512, 580,
+            const warning = this.add.text(512, 620,
                 'Please provide more detailed instructions (at least 20 characters)',
                 {
                     fontSize: '16px',
