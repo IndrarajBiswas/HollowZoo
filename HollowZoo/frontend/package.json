@@ -1,0 +1,20 @@
+{
+  "name": "hollow-zoo-frontend",
+  "version": "1.0.0",
+  "description": "Hollow Zoo: AI Awakening - Frontend game client",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "game",
+    "phaser",
+    "ai",
+    "gemini"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

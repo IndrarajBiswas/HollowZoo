@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hollow Zoo: AI Awakening</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #2a2f4f 0%, #051923 35%, #04050b 100%);
+            font-family: 'Space Grotesk', 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #f2d1c9;
+        }
+
+        #game-container {
+            position: relative;
+            border: 2px solid rgba(242, 209, 201, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 20px 80px rgba(5, 25, 35, 0.8), 0 0 60px rgba(204, 43, 82, 0.25);
+            overflow: hidden;
+            backdrop-filter: blur(6px);
+        }
+
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #e0e0e0;
+        }
+
+        #loading-screen h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #f2d1c9;
+            letter-spacing: 2px;
+        }
+
+        #loading-screen p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(242, 209, 201, 0.2);
+            border-top: 4px solid #cc2b52;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px 0;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            background: radial-gradient(circle at top right, rgba(204, 43, 82, 0.12), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(5, 25, 35, 0.25), transparent 45%);
+        }
+
+        #ui-overlay > * {
+            pointer-events: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading-screen">
+            <h1>🦘 HOLLOW ZOO</h1>
+            <p>AI Awakening</p>
+            <div class="spinner"></div>
+            <p id="loading-text">Initializing AI systems...</p>
+        </div>
+        <div id="ui-overlay"></div>
+    </div>
+
+    <!-- Phaser 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+
+    <!-- Game Configuration -->
+    <script src="config.js"></script>
+
+    <!-- Entities -->
+    <script src="entities/RooKnight.js"></script>
+    <script src="entities/Kangaroo.js"></script>
+
+    <!-- UI Components -->
+    <script src="ui/MentorRunes.js"></script>
+    <script src="ui/AIThoughtPanel.js"></script>
+    <script src="ui/HealthBar.js"></script>
+
+    <!-- Scenes -->
+    <script src="scenes/BootScene.js"></script>
+    <script src="scenes/MenuScene.js"></script>
+    <script src="scenes/PromptScene.js"></script>
+    <script src="scenes/ZooScene.js"></script>
+    <script src="scenes/ResultScene.js"></script>
+    <script src="scenes/NestScene.js"></script>
+
+    <!-- Main Game -->
+    <script src="main.js"></script>
+</body>
+</html>
