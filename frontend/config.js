@@ -2,7 +2,7 @@
 const GameConfig = {
     // API Configuration
     API_BASE_URL: 'http://localhost:5000/api',
-    USE_FAKE_AI: true,
+    USE_FAKE_AI: false,  // Set to true to use simulated AI (no API needed)
 
     // Game Settings
     WIDTH: 1180,

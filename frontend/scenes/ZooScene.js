@@ -191,6 +191,16 @@ class ZooScene extends Phaser.Scene {
         // Create health bars
         this.playerHealthBar = new HealthBar(this, 20, 110, this.player.health, 'RooKnight');
         this.enemyHealthBar = new HealthBar(this, this.cameras.main.width - 280, 110, this.enemy.health, this.enemy.enemyType);
+
+        // Combo display
+        this.comboText = this.add.text(this.cameras.main.width / 2, 20, '', {
+            fontSize: '28px',
+            fontFamily: 'monospace',
+            color: '#ffdd00',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(10).setAlpha(0);
     }
 
     setupAI() {
@@ -504,6 +514,21 @@ class ZooScene extends Phaser.Scene {
         }
         if (this.enemyHealthBar) {
             this.enemyHealthBar.update(this.enemy.health);
+        }
+
+        // Update combo display
+        if (this.player && this.comboText) {
+            const combo = this.player.getComboInfo();
+            if (combo.count > 1) {
+                this.comboText.setText(`${combo.count}x COMBO • ${Math.round((combo.multiplier - 1) * 100)}% DMG`);
+                this.comboText.setAlpha(1);
+
+                // Pulse effect
+                const scale = 1 + Math.sin(time * 0.01) * 0.1;
+                this.comboText.setScale(scale);
+            } else {
+                this.comboText.setAlpha(Math.max(0, this.comboText.alpha - 0.02));
+            }
         }
 
         // Check for battle end

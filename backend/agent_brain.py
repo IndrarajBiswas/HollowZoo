@@ -12,7 +12,7 @@ class AgentBrain:
     def __init__(self):
         # Configure Gemini API
         # TODO: Set USE_REAL_AI = True to enable actual Gemini AI (requires valid API key)
-        USE_REAL_AI = False  # <-- Using simulated AI for smooth gameplay
+        USE_REAL_AI = True  # <-- Set to True to use real Gemini AI
 
         api_key = os.environ.get('GEMINI_API_KEY')
         if not USE_REAL_AI or not api_key:
@@ -61,38 +61,39 @@ class AgentBrain:
     def _build_decision_prompt(self, agent_state, enemy_state, environment, user_prompt, memory):
         """Build the prompt for Gemini with user's tactical instructions"""
 
-        prompt = f"""You are RooKnight, an AI agent in a combat mission. Your human commander has given you tactical instructions.
+        health_status = "critical" if agent_state.get('health', 100) < 30 else "low" if agent_state.get('health', 100) < 60 else "good"
+        enemy_threat = "immediate" if enemy_state.get('distance', 100) < 50 else "close" if enemy_state.get('distance', 100) < 100 else "distant"
 
-USER'S TACTICAL INSTRUCTIONS:
+        prompt = f"""You are RooKnight, an AI combat agent following your commander's tactical orders.
+
+🎯 COMMANDER'S STRATEGY:
 "{user_prompt}"
 
-CURRENT BATTLE STATE:
-- Your Health: {agent_state.get('health', 100)}/100
-- Your Energy: {agent_state.get('energy', 100)}/100
-- Position: {"on ground" if agent_state.get('onGround') else "airborne"}
+⚔️ COMBAT SITUATION:
+Your Status: {agent_state.get('health', 100)}/100 HP ({health_status}), {agent_state.get('energy', 100)}/100 energy
+Enemy: {enemy_state.get('type', 'Unknown')} - {enemy_state.get('health', 100)}/100 HP ({enemy_threat} threat)
+Distance: {enemy_state.get('distance', 0):.0f} units | Enemy is: {enemy_state.get('state', 'idle')}
+Position: {"grounded" if agent_state.get('onGround') else "airborne"} in {environment.get('zone', 'arena')}
 
-ENEMY STATUS:
-- Type: {enemy_state.get('type', 'Unknown')}
-- Health: {enemy_state.get('health', 100)}/100
-- Distance: {enemy_state.get('distance', 0)} units
-- Current State: {enemy_state.get('state', 'idle')}
-
-ENVIRONMENT:
-- Zone: {environment.get('zone', 'Unknown')}
-- Lighting: {environment.get('lighting', 'normal')}
-- Hazards: {environment.get('hazards', 'none')}
-
-PAST LESSONS LEARNED:
+📚 PAST LESSONS:
 {self._format_memory(memory)}
 
-IMPORTANT: Follow the user's tactical instructions as closely as possible. Your success depends on how well you interpret and execute their strategy.
+🎮 AVAILABLE ACTIONS & WHEN TO USE:
+- ATTACK: Strike enemy (best at 15-50 units, deals damage)
+- JUMP_ATTACK: Aerial assault (high damage, crosses gaps, 50-100 units ideal)
+- DODGE: Quick evasive dash (escape danger, reposition)
+- BLOCK: Defensive stance (reduces damage 65%, use when enemy attacking)
+- RETREAT: Fall back when low health or overwhelmed
+- MOVE_CLOSER: Advance toward enemy (when >100 units away)
+- MOVE_AWAY: Create space (when too close <15 units)
+- WAIT_AND_OBSERVE: Study patterns (use sparingly, when enemy idle)
 
-Available actions: ATTACK, DODGE, BLOCK, WAIT_AND_OBSERVE, RETREAT, JUMP_ATTACK, MOVE_CLOSER, MOVE_AWAY
+CRITICAL: Your commander's strategy is paramount. Interpret their instructions and adapt them to this exact situation. If they say "be aggressive", favor ATTACK/JUMP_ATTACK. If "defensive", use DODGE/BLOCK more. If "smart", analyze before acting.
 
-Respond in JSON format:
+Respond ONLY with valid JSON:
 {{
-  "action": "ACTION_NAME",
-  "reasoning": "Brief explanation referencing user's instructions",
+  "action": "EXACT_ACTION_NAME",
+  "reasoning": "1-2 sentences explaining how this follows commander's strategy for THIS situation",
   "confidence": 0.0-1.0
 }}"""
 
