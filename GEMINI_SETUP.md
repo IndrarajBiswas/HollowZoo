@@ -24,9 +24,33 @@ GEMINI_API_KEY=AIzaSy...your_actual_key_here
 pip install -r requirements.txt
 ```
 
-### 4. Start the Backend
+### 4. Start Development Servers
+
+**Option A: Use the development script (recommended)**
 ```bash
+# On Mac/Linux:
+./dev.sh
+
+# On Windows:
+dev.bat
+```
+
+This automatically:
+- Checks for `.env` file
+- Creates virtual environment if needed
+- Installs dependencies
+- Starts both backend (port 5000) and frontend (port 8000)
+- Enables auto-reload on code changes
+
+**Option B: Manual start**
+```bash
+# Terminal 1 - Backend
+cd backend
 python app.py
+
+# Terminal 2 - Frontend
+cd frontend
+python -m http.server 8000
 ```
 
 You should see:
@@ -36,7 +60,7 @@ You should see:
 ```
 
 ### 5. Open the Game
-Open `frontend/index.html` in your browser (Chrome/Edge recommended)
+Go to http://localhost:8000 in your browser (Chrome/Edge recommended)
 
 ---
 
