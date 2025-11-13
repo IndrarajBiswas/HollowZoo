@@ -6,61 +6,48 @@ class ZooScene extends Phaser.Scene {
     createAtmosphere() {
         const { width, height } = this.cameras.main;
         const palette = this.getActivePalette();
-        const topColor = this.hexToColor(palette[0]);
-        const bottomColor = this.hexToColor(palette[1] || palette[0]);
-        const accentColor = this.hexToColor(palette[2] || palette[0]).color;
-        const glowColor = this.hexToColor(palette[3] || '#9fb8ff').color;
+        const glowColor = MoonlitEnvironment.hexToColor(palette[3] || '#9fb8ff').color;
 
-        const gradient = this.add.graphics();
-        for (let i = 0; i <= height; i += 3) {
-            const color = Phaser.Display.Color.Interpolate.ColorWithColor(
-                topColor,
-                bottomColor,
-                height,
-                i
-            );
-            gradient.fillStyle(Phaser.Display.Color.GetColor(color.r, color.g, color.b), 1);
-            gradient.fillRect(0, i, width, 3);
-        }
-        gradient.setDepth(-20);
+        const gradient = MoonlitEnvironment.drawVerticalGradient(this, {
+            width,
+            height,
+            palette,
+            depth: -20,
+            step: 3
+        });
 
         this.parallaxCages = this.add.graphics();
         this.parallaxCages.setDepth(-19);
-        this.parallaxCages.fillStyle(this.hexToColor(palette[2] || '#3c5e7f').color, 0.4);
+        this.parallaxCages.fillStyle(MoonlitEnvironment.hexToColor(palette[2] || '#3c5e7f').color, 0.4);
         for (let x = -40; x < width + 40; x += 120) {
             this.parallaxCages.fillRect(x, height - 260, 70, 260);
         }
 
-        this.moon = this.add.circle(width * 0.8, height * 0.18, 90, glowColor, 0.25)
-            .setStrokeStyle(2, this.hexToColor(palette[4] || '#ffe7b7').color, 0.7)
-            .setDepth(-18);
+        this.moon = MoonlitEnvironment.createMoon(this, {
+            x: width * 0.8,
+            y: height * 0.18,
+            radius: 90,
+            palette,
+            depth: -18,
+            alpha: 0.25
+        });
 
-        this.motes = [];
-        for (let i = 0; i < 32; i++) {
-            const mote = this.add.rectangle(
-                Phaser.Math.Between(0, width),
-                Phaser.Math.Between(0, height),
-                2,
-                10,
-                glowColor,
-                Phaser.Math.FloatBetween(0.15, 0.35)
-            );
-            mote.setDepth(-17);
-            this.motes.push(mote);
-            this.tweens.add({
-                targets: mote,
-                y: mote.y - Phaser.Math.Between(40, 90),
-                alpha: Phaser.Math.FloatBetween(0.05, 0.25),
-                duration: Phaser.Math.Between(4200, 6800),
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut',
-                delay: Phaser.Math.Between(0, 1400)
-            });
-        }
+        const motes = MoonlitEnvironment.createMotes(this, {
+            width,
+            height,
+            count: 32,
+            color: glowColor,
+            depth: -17,
+            alphaRange: { min: 0.15, max: 0.35 },
+            drift: { min: 40, max: 90 },
+            duration: { min: 4200, max: 6800 },
+            delayRange: { min: 0, max: 1400 },
+            size: { width: 2, height: 10 }
+        });
+        this.motes = motes.motes;
 
         this.fogLayer = this.add.rectangle(width / 2, height - 140, width * 1.4, 300,
-            this.hexToColor(palette[1] || '#1b2440').color, 0.22).setDepth(-16);
+            MoonlitEnvironment.hexToColor(palette[1] || '#1b2440').color, 0.22).setDepth(-16);
 
         this.backgroundLayers = {
             gradient
@@ -109,9 +96,9 @@ class ZooScene extends Phaser.Scene {
 
         const worldWidth = this.cameras.main.width;
         const palette = this.getActivePalette();
-        const groundColor = this.hexToColor(palette[1] || '#1b2333').color;
-        const platformColor = this.hexToColor(palette[2] || '#2e3f58').color;
-        const perchColor = this.hexToColor(palette[3] || '#4c5d7f').color;
+        const groundColor = MoonlitEnvironment.hexToColor(palette[1] || '#1b2333').color;
+        const platformColor = MoonlitEnvironment.hexToColor(palette[2] || '#2e3f58').color;
+        const perchColor = MoonlitEnvironment.hexToColor(palette[3] || '#4c5d7f').color;
 
         const ground = this.add.rectangle(worldWidth / 2, 720, worldWidth, 120, groundColor, 1);
         this.physics.add.existing(ground, true);
@@ -155,7 +142,7 @@ class ZooScene extends Phaser.Scene {
 
         switch (this.levelData.biome) {
             case GameConfig.BIOMES.LANTERN_AVIARY:
-                graphics.lineStyle(2, this.hexToColor(palette[4]).color, 0.4);
+                graphics.lineStyle(2, MoonlitEnvironment.hexToColor(palette[4]).color, 0.4);
                 for (let i = 0; i < 6; i++) {
                     const x = 120 + i * 160;
                     graphics.lineBetween(x, 120, x + Phaser.Math.Between(-40, 40), 280);
@@ -743,15 +730,5 @@ class ZooScene extends Phaser.Scene {
         const fallback = Object.values(GameConfig.PALETTES)[0];
         const palette = GameConfig.PALETTES?.[GameState.currentBiome] || fallback;
         return palette;
-    }
-
-    hexToColor(hex) {
-        if (!hex) {
-            return Phaser.Display.Color.HexStringToColor('#1a1a2e');
-        }
-        if (!hex.startsWith('#')) {
-            hex = `#${hex}`;
-        }
-        return Phaser.Display.Color.HexStringToColor(hex);
     }
 }

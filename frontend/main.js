@@ -22,6 +22,19 @@ if (typeof window !== 'undefined') {
     window.GameState = GameState;
 }
 
+const hideLoadingScreen = (delay = 0) => {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (!loadingScreen) {
+        return;
+    }
+
+    setTimeout(() => {
+        loadingScreen.style.transition = 'opacity 0.5s';
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => loadingScreen.classList.add('hidden'), 500);
+    }, delay);
+};
+
 // Main game initialization
 const config = {
     type: Phaser.AUTO,
@@ -40,28 +53,15 @@ const config = {
     scene: [BootScene, MenuScene, PromptScene, ZooScene, ResultScene, NestScene]
 };
 
-// Create game instance
-const game = new Phaser.Game(config);
-
-const hideLoadingScreen = (delay = 0) => {
-    const loadingScreen = document.getElementById('loading-screen');
-    if (!loadingScreen) {
-        return;
-    }
-
-    setTimeout(() => {
-        loadingScreen.style.transition = 'opacity 0.5s';
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => loadingScreen.classList.add('hidden'), 500);
-    }, delay);
-};
-
-// Hide loading screen when the page finishes loading
+// Expose helpers for other scripts
 if (typeof window !== 'undefined') {
+    window.hideLoadingScreen = hideLoadingScreen;
     window.addEventListener('load', () => hideLoadingScreen(1500));
 }
 
-// Also hide loading screen as soon as Phaser reports readiness
-if (game?.events) {
-    game.events.once('ready', () => hideLoadingScreen(500));
+// Create game instance
+const game = new Phaser.Game(config);
+
+if (game?.events && typeof Phaser !== 'undefined' && Phaser.Core?.Events?.READY) {
+    game.events.once(Phaser.Core.Events.READY, () => hideLoadingScreen(500));
 }

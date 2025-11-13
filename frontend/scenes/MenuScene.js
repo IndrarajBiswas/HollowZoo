@@ -112,29 +112,29 @@ class MenuScene extends Phaser.Scene {
     createBackdrop(width, height, level) {
         const palette = GameConfig.PALETTES[level?.biome] || Object.values(GameConfig.PALETTES)[0];
 
-        const gradient = this.add.graphics();
-        for (let i = 0; i <= height; i += 4) {
-            const c = Phaser.Display.Color.Interpolate.ColorWithColor(
-                Phaser.Display.Color.HexStringToColor(palette[0]),
-                Phaser.Display.Color.HexStringToColor(palette[1] || palette[0]),
-                height,
-                i
-            );
-            gradient.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
-            gradient.fillRect(0, i, width, 4);
-        }
-        gradient.setDepth(-30);
+        const gradient = MoonlitEnvironment.drawVerticalGradient(this, {
+            width,
+            height,
+            palette,
+            depth: -30,
+            step: 4
+        });
 
         this.parallaxLayers = [];
 
-        this.moon = this.add.circle(width * 0.82, height * 0.2, 80, Phaser.Display.Color.HexStringToColor(palette[3] || '#9fb8ff').color, 0.4);
-        this.moon.setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(palette[4] || '#ffe7b7').color, 0.6);
-        this.moon.setDepth(-25);
+        this.moon = MoonlitEnvironment.createMoon(this, {
+            x: width * 0.82,
+            y: height * 0.2,
+            radius: 80,
+            palette,
+            depth: -25,
+            alpha: 0.4
+        });
         this.parallaxLayers.push({ node: this.moon, axis: 'y', amplitude: 8, base: this.moon.y });
 
         this.parallaxBars = this.add.graphics();
         this.parallaxBars.setDepth(-24);
-        this.parallaxBars.lineStyle(2, Phaser.Display.Color.HexStringToColor(palette[2] || '#3c5e7f').color, 0.6);
+        this.parallaxBars.lineStyle(2, MoonlitEnvironment.hexToColor(palette[2] || '#3c5e7f').color, 0.6);
         for (let x = 0; x <= width; x += 80) {
             this.parallaxBars.lineBetween(x, height, x + 40, height - 220);
         }
@@ -147,7 +147,7 @@ class MenuScene extends Phaser.Scene {
                 Phaser.Math.Between(140, 360),
                 14,
                 36,
-                Phaser.Display.Color.HexStringToColor(palette[4] || '#ffe7b7').color,
+                MoonlitEnvironment.hexToColor(palette[4] || '#ffe7b7').color,
                 0.45
             );
             lantern.setDepth(-22);
@@ -165,7 +165,7 @@ class MenuScene extends Phaser.Scene {
         }
 
         this.fog = this.add.rectangle(width / 2, height - 120, width * 1.2, 260,
-            Phaser.Display.Color.HexStringToColor(palette[1] || '#1b2440').color, 0.22);
+            MoonlitEnvironment.hexToColor(palette[1] || '#1b2440').color, 0.22);
         this.fog.setDepth(-21);
 
         this.backgroundGradient = gradient;
