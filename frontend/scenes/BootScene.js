@@ -74,17 +74,18 @@ class BootScene extends Phaser.Scene {
         }
 
         // Initialize game systems asynchronously
-        this.initializeAPI().then(() => {
-            // Move to menu scene after initialization
-            this.time.delayedCall(300, () => {
-                this.scene.start('MenuScene');
+        this.initializeAPI()
+            .catch(() => null)
+            .finally(() => {
+                if (typeof window !== 'undefined' && typeof window.hideLoadingScreen === 'function') {
+                    window.hideLoadingScreen(300);
+                }
+
+                // Move to menu scene after initialization
+                this.time.delayedCall(300, () => {
+                    this.scene.start('MenuScene');
+                });
             });
-        }).catch(() => {
-            // Even if API fails, continue to menu
-            this.time.delayedCall(300, () => {
-                this.scene.start('MenuScene');
-            });
-        });
     }
 
     async initializeAPI() {

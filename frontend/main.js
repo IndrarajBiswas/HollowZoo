@@ -1,3 +1,40 @@
+// Global game state
+const GameState = {
+    missionPrompt: '',  // User's tactical instructions
+    lastPrompt: '',
+    memory: [],
+    currentBiome: GameConfig.BIOMES.LANTERN_AVIARY,
+    agentLevel: 1,
+    battlesWon: 0,
+    battlesLost: 0,
+    currentLevelIndex: 0,
+    unlockedLevelCount: 1,
+    levelHistory: {},
+    coaching: {
+        aggression: 35,
+        caution: 55,
+        curiosity: 60
+    }
+};
+
+// Expose game state globally for any late-loaded scripts
+if (typeof window !== 'undefined') {
+    window.GameState = GameState;
+}
+
+const hideLoadingScreen = (delay = 0) => {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (!loadingScreen) {
+        return;
+    }
+
+    setTimeout(() => {
+        loadingScreen.style.transition = 'opacity 0.5s';
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => loadingScreen.classList.add('hidden'), 500);
+    }, delay);
+};
+
 // Main game initialization
 const config = {
     type: Phaser.AUTO,
@@ -16,50 +53,15 @@ const config = {
     scene: [BootScene, MenuScene, PromptScene, ZooScene, ResultScene, NestScene]
 };
 
+// Expose helpers for other scripts
+if (typeof window !== 'undefined') {
+    window.hideLoadingScreen = hideLoadingScreen;
+    window.addEventListener('load', () => hideLoadingScreen(1500));
+}
+
 // Create game instance
 const game = new Phaser.Game(config);
 
-// Global game state
-const GameState = {
-    missionPrompt: '',  // User's tactical instructions
-    lastPrompt: '',
-    memory: [],
-    currentBiome: GameConfig.BIOMES.ROO_SANCTUM,
-    agentLevel: 1,
-    battlesWon: 0,
-    battlesLost: 0,
-    currentLevelIndex: 0,
-    unlockedLevelCount: 1,
-    levelHistory: {}
-};
-
-// Hide loading screen when game is ready
-window.addEventListener('load', () => {
-    // Hide loading screen after Phaser fully initializes
-    setTimeout(() => {
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
-            loadingScreen.style.opacity = '0';
-            loadingScreen.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-            }, 500);
-        }
-    }, 1500);  // Reduced from 2000ms to 1500ms
-});
-
-// Also hide loading screen when Phaser is ready
-if (game) {
-    game.events.once('ready', () => {
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                loadingScreen.style.transition = 'opacity 0.5s';
-                setTimeout(() => {
-                    loadingScreen.classList.add('hidden');
-                }, 500);
-            }
-        }, 500);
-    });
+if (game?.events && typeof Phaser !== 'undefined' && Phaser.Core?.Events?.READY) {
+    game.events.once(Phaser.Core.Events.READY, () => hideLoadingScreen(500));
 }

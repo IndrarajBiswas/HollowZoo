@@ -5,281 +5,55 @@ class ZooScene extends Phaser.Scene {
 
     createAtmosphere() {
         const { width, height } = this.cameras.main;
-        this.biomeLighting = this.getBiomeLightingCues();
-        const palette = this.biomeLighting.palette || this.getActivePalette();
-        const topColor = this.hexToColor(palette[0]);
-        const bottomColor = this.hexToColor(palette[1] || palette[0]);
-        const accentColor = this.hexToColor(palette[2] || palette[0]).color;
-        const glowColor = this.hexToColor(palette[3] || '#ffffff').color;
+        const palette = this.getActivePalette();
+        const glowColor = MoonlitEnvironment.hexToColor(palette[3] || '#9fb8ff').color;
 
-        const gradient = this.add.graphics();
-        for (let i = 0; i <= height; i += 4) {
-            const color = Phaser.Display.Color.Interpolate.ColorWithColor(
-                topColor,
-                bottomColor,
-                height,
-                i
-            );
-            gradient.fillStyle(Phaser.Display.Color.GetColor(color.r, color.g, color.b), 1);
-            gradient.fillRect(0, i, width, 4);
-        }
-        gradient.setDepth(-14);
+        const gradient = MoonlitEnvironment.drawVerticalGradient(this, {
+            width,
+            height,
+            palette,
+            depth: -20,
+            step: 3
+        });
 
-        const starfield = this.add.graphics();
-        for (let i = 0; i < 80; i++) {
-            const radius = Phaser.Math.Between(1, 2);
-            starfield.fillStyle(glowColor, Phaser.Math.FloatBetween(0.06, 0.22));
-            starfield.fillCircle(
-                Phaser.Math.Between(0, width),
-                Phaser.Math.Between(40, height * 0.55),
-                radius
-            );
-        }
-        starfield.setDepth(-13).setBlendMode(Phaser.BlendModes.SCREEN);
-
-        const menagerie = this.add.graphics();
-        const baseColor = this.hexToColor(palette[0]).color;
-        menagerie.fillStyle(baseColor, 0.92);
-        const enclosureWidth = 160;
-        for (let x = -20; x < width + enclosureWidth; x += enclosureWidth + 60) {
-            const heightOffset = Phaser.Math.Between(160, 260);
-            menagerie.fillRoundedRect(x, height - heightOffset, enclosureWidth, heightOffset + 30, 18);
-        }
-        menagerie.fillStyle(this.hexToColor(palette[1] || palette[0]).color, 0.88);
-        menagerie.fillEllipse(width * 0.25, height - 210, 260, 120);
-        menagerie.fillEllipse(width * 0.68, height - 240, 320, 150);
-        menagerie.setDepth(-12);
-
-        this.lightBeams = [];
-        for (let i = 0; i < 4; i++) {
-            const beam = this.add.rectangle(
-                160 + i * 280,
-                height / 2,
-                220,
-                height * 1.4,
-                accentColor,
-                0.07
-            );
-            beam.setAngle(-14 + i * 6);
-            beam.setBlendMode(Phaser.BlendModes.SCREEN);
-            beam.setDepth(-11);
-            this.lightBeams.push(beam);
+        this.parallaxCages = this.add.graphics();
+        this.parallaxCages.setDepth(-19);
+        this.parallaxCages.fillStyle(MoonlitEnvironment.hexToColor(palette[2] || '#3c5e7f').color, 0.4);
+        for (let x = -40; x < width + 40; x += 120) {
+            this.parallaxCages.fillRect(x, height - 260, 70, 260);
         }
 
-        this.floatingLights = [];
-        for (let i = 0; i < 26; i++) {
-            const mote = this.add.rectangle(
-                Phaser.Math.Between(0, width),
-                Phaser.Math.Between(0, height),
-                Phaser.Math.Between(2, 4),
-                Phaser.Math.Between(8, 16),
-                glowColor,
-                0.2
-            );
-            mote.setDepth(-9).setBlendMode(Phaser.BlendModes.SCREEN);
-            this.floatingLights.push(mote);
-            this.tweens.add({
-                targets: mote,
-                y: mote.y - Phaser.Math.Between(40, 120),
-                alpha: 0,
-                duration: Phaser.Math.Between(4000, 7200),
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut',
-                delay: Phaser.Math.Between(0, 1400)
-            });
-        }
+        this.moon = MoonlitEnvironment.createMoon(this, {
+            x: width * 0.8,
+            y: height * 0.18,
+            radius: 90,
+            palette,
+            depth: -18,
+            alpha: 0.25
+        });
+
+        const motes = MoonlitEnvironment.createMotes(this, {
+            width,
+            height,
+            count: 32,
+            color: glowColor,
+            depth: -17,
+            alphaRange: { min: 0.15, max: 0.35 },
+            drift: { min: 40, max: 90 },
+            duration: { min: 4200, max: 6800 },
+            delayRange: { min: 0, max: 1400 },
+            size: { width: 2, height: 10 }
+        });
+        this.motes = motes.motes;
+
+        this.fogLayer = this.add.rectangle(width / 2, height - 140, width * 1.4, 300,
+            MoonlitEnvironment.hexToColor(palette[1] || '#1b2440').color, 0.22).setDepth(-16);
 
         this.createVolumetricFog(width, height, this.biomeLighting);
         this.createBiomeLightingOverlay(width, height, this.biomeLighting);
 
         this.backgroundLayers = {
-            gradient,
-            starfield,
-            menagerie
-        };
-    }
-
-    createVolumetricFog(width, height, lighting) {
-        this.volumetricFog = [];
-        const fogColors = lighting.fogColors || ['#4b5c70', '#3a4456', '#2a2f3a'];
-
-        fogColors.forEach((hex, index) => {
-            const fogColor = this.hexToColor(hex).color;
-            const fog = this.add.graphics({
-                x: width / 2,
-                y: height - (210 - index * 60)
-            });
-            fog.fillGradientStyle(fogColor, fogColor, fogColor, fogColor,
-                0.14 - index * 0.02,
-                0.12 - index * 0.02,
-                0.08 - index * 0.015,
-                0.06 - index * 0.01
-            );
-            fog.fillEllipse(0, 0, width * (1.4 - index * 0.18), 220 - index * 28);
-            fog.setBlendMode(Phaser.BlendModes.ADD);
-            fog.setDepth(-10 + index);
-
-            this.volumetricFog.push({
-                sprite: fog,
-                baseX: fog.x,
-                baseY: fog.y,
-                sway: 24 + index * 12,
-                speed: 0.0003 + index * 0.00012
-            });
-        });
-    }
-
-    createBiomeLightingOverlay(width, height, lighting) {
-        const overlayColor = this.hexToColor(lighting.overlayColor || '#1d2533').color;
-        const overlayAlpha = lighting.overlayAlpha ?? 0.18;
-        const overlay = this.add.rectangle(width / 2, height / 2, width * 1.2, height * 1.2, overlayColor, overlayAlpha);
-        overlay.setBlendMode(Phaser.BlendModes.SOFT_LIGHT);
-        overlay.setDepth(-7);
-        this.biomeOverlay = overlay;
-    }
-
-    createHandDrawnForeground() {
-        const { width, height } = this.cameras.main;
-        const propsTint = this.biomeLighting?.propsTint || 0x2e2218;
-        const highlightTint = this.biomeLighting?.highlightTint || 0xa67c52;
-
-        this.foregroundDecor = this.add.container(0, 0).setDepth(4);
-
-        const leftSketch = this.add.graphics();
-        leftSketch.lineStyle(6, propsTint, 0.65);
-        leftSketch.beginPath();
-        leftSketch.moveTo(48, height);
-        leftSketch.quadraticCurveTo(140, height - 260, 78, height - 520);
-        leftSketch.quadraticCurveTo(36, height - 600, 60, height - 720);
-        leftSketch.strokePath();
-        leftSketch.fillStyle(propsTint, 0.55);
-        leftSketch.fillCircle(62, height - 420, 28);
-        leftSketch.fillCircle(52, height - 320, 18);
-
-        const rightGates = this.add.graphics();
-        rightGates.lineStyle(5, propsTint, 0.8);
-        rightGates.strokeRoundedRect(width - 140, height - 280, 110, 220, 26);
-        rightGates.lineStyle(3, highlightTint, 0.6);
-        rightGates.strokePath();
-        rightGates.fillStyle(propsTint, 0.45);
-        rightGates.fillRect(width - 124, height - 268, 18, 160);
-        rightGates.fillRect(width - 78, height - 268, 18, 160);
-
-        const signPost = this.add.graphics({ x: width / 2 - 320, y: height - 220 });
-        signPost.fillStyle(propsTint, 0.85);
-        signPost.fillRect(-6, -120, 12, 160);
-        signPost.fillRoundedRect(-120, -160, 240, 90, 18);
-        signPost.lineStyle(3, highlightTint, 0.6);
-        signPost.strokeRoundedRect(-120, -160, 240, 90, 18);
-        const signText = this.add.text(signPost.x, signPost.y - 130, 'Sanctuary Gate', {
-            fontFamily: 'Cinzel Decorative, "IBM Plex Serif", serif',
-            fontSize: '20px',
-            color: '#281a12',
-            align: 'center'
-        }).setOrigin(0.5);
-
-        const hangingLantern = this.add.graphics({ x: width - 220, y: height - 560 });
-        hangingLantern.lineStyle(3, propsTint, 0.7);
-        hangingLantern.beginPath();
-        hangingLantern.moveTo(0, -40);
-        hangingLantern.lineTo(0, 60);
-        hangingLantern.strokePath();
-        hangingLantern.fillStyle(highlightTint, 0.85);
-        hangingLantern.fillRoundedRect(-28, 60, 56, 72, 16);
-        const lanternGlow = this.add.ellipse(width - 220, height - 440, 160, 120, highlightTint, 0.12)
-            .setBlendMode(Phaser.BlendModes.ADD);
-
-        const foregroundMist = this.add.graphics({ x: width / 2, y: height - 40 });
-        const mistColor = this.hexToColor(this.biomeLighting?.foregroundFog || '#9ca9c4').color;
-        foregroundMist.fillGradientStyle(mistColor, mistColor, mistColor, mistColor, 0.2, 0.16, 0.08, 0.05);
-        foregroundMist.fillEllipse(0, 0, width * 1.4, 180);
-        foregroundMist.setBlendMode(Phaser.BlendModes.SCREEN).setAlpha(0.22);
-        this.foregroundFog = foregroundMist;
-
-        this.foregroundDecor.add([
-            leftSketch,
-            rightGates,
-            signPost,
-            signText,
-            hangingLantern,
-            lanternGlow,
-            foregroundMist
-        ]);
-
-        this.tweens.add({
-            targets: lanternGlow,
-            alpha: {
-                getStart: () => 0.1,
-                getEnd: () => 0.24
-            },
-            duration: 2600,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-    }
-
-    getBiomeLightingCues() {
-        const biome = (GameState.currentBiome || '').toLowerCase();
-        const cues = {
-            desert: {
-                palette: ['#1a0f08', '#342013', '#d6a15b', '#f5deb3'],
-                fogColors: ['#c9924a', '#a96a2c', '#7e4f24'],
-                overlayColor: '#5c371e',
-                overlayAlpha: 0.16,
-                propsTint: 0x5b3a20,
-                highlightTint: 0xf0c07a,
-                foregroundFog: '#d0a87c',
-                platforms: {
-                    ground: '#5b3d28',
-                    platform: '#704d2a',
-                    perch: '#8a6c42'
-                }
-            },
-            rainforest: {
-                palette: ['#04140d', '#123326', '#4ea38a', '#d2f1e4'],
-                fogColors: ['#3c7f68', '#2f6c57', '#1d4c3d'],
-                overlayColor: '#1c3b2e',
-                overlayAlpha: 0.22,
-                propsTint: 0x1d3a2e,
-                highlightTint: 0x7fcbb0,
-                foregroundFog: '#6eb29a',
-                platforms: {
-                    ground: '#264938',
-                    platform: '#1f3a2d',
-                    perch: '#3d5c4a'
-                }
-            },
-            tundra: {
-                palette: ['#0b1320', '#1a2d45', '#6c86b8', '#d6e9ff'],
-                fogColors: ['#9fb8d8', '#6f87aa', '#4b5d79'],
-                overlayColor: '#23354d',
-                overlayAlpha: 0.2,
-                propsTint: 0x2a3a55,
-                highlightTint: 0xb6d4f7,
-                foregroundFog: '#bcd0ea',
-                platforms: {
-                    ground: '#2f3f58',
-                    platform: '#3f5674',
-                    perch: '#546c8c'
-                }
-            }
-        };
-
-        return cues[biome] || {
-            palette: ['#05070c', '#142033', '#3a4d63', '#c7d7f2'],
-            fogColors: ['#54627a', '#3e485a', '#2b333f'],
-            overlayColor: '#1a2534',
-            overlayAlpha: 0.2,
-            propsTint: 0x2e2218,
-            highlightTint: 0xa67c52,
-            foregroundFog: '#9ca9c4',
-            platforms: {
-                ground: '#2a3243',
-                platform: '#394558',
-                perch: '#485369'
-            }
+            gradient
         };
     }
 
@@ -300,59 +74,124 @@ class ZooScene extends Phaser.Scene {
     }
 
     setupWorld() {
-        // Set background color based on biome
         this.cameras.main.setBackgroundColor(GameConfig.COLORS.BACKGROUND);
 
-        // Add biome info text
-        this.biomeText = this.add.text(20, 20,
-            `Zone: ${GameState.currentBiome} • Level ${this.levelData.id}: ${this.levelData.title}`, {
+        this.biomePanel = this.add.rectangle(220, 60, 320, 70, 0x0d1424, 0.78)
+            .setStrokeStyle(2, 0x2c3a57)
+            .setDepth(5);
+
+        this.biomeText = this.add.text(70, 38,
+            `Zone • ${this.levelData.title}`, {
             fontSize: '18px',
-            fontFamily: '"IBM Plex Serif", Georgia, serif',
-            color: '#f1e5cc',
-            shadow: {
-                offsetX: 0,
-                offsetY: 2,
-                color: 'rgba(0,0,0,0.65)',
-                blur: 6,
-                fill: true
-            }
-        }).setDepth(5);
+            fontFamily: 'Space Grotesk',
+            color: '#cdd7ff'
+        }).setDepth(6);
+
+        this.biomeDetail = this.add.text(70, 64,
+            `${this.levelData.enemyType} • ${this.levelData.difficultyTier}`, {
+            fontSize: '14px',
+            fontFamily: 'Space Grotesk',
+            color: '#9fd6ff'
+        }).setDepth(6);
     }
 
     createPlatforms() {
         this.platforms = this.physics.add.staticGroup();
 
         const worldWidth = this.cameras.main.width;
-        const palette = this.biomeLighting?.platforms || {};
-        const groundColor = this.hexToColor(palette.ground || '#2a2f3f').color;
-        const platformColor = this.hexToColor(palette.platform || '#3a4358').color;
-        const perchColor = this.hexToColor(palette.perch || '#454f6a').color;
+        const palette = this.getActivePalette();
+        const groundColor = MoonlitEnvironment.hexToColor(palette[1] || '#1b2333').color;
+        const platformColor = MoonlitEnvironment.hexToColor(palette[2] || '#2e3f58').color;
+        const perchColor = MoonlitEnvironment.hexToColor(palette[3] || '#4c5d7f').color;
 
-        // Ground
-        const ground = this.add.rectangle(worldWidth / 2, 720, worldWidth, 120, groundColor);
+        const ground = this.add.rectangle(worldWidth / 2, 720, worldWidth, 120, groundColor, 1);
         this.physics.add.existing(ground, true);
         this.platforms.add(ground);
 
-        // Platforms
-        const platform1 = this.add.rectangle(260, 520, 220, 22, platformColor);
+        const platform1 = this.add.rectangle(260, 520, 220, 22, platformColor, 0.95);
         this.physics.add.existing(platform1, true);
         this.platforms.add(platform1);
 
-        const platform2 = this.add.rectangle(worldWidth - 260, 420, 220, 22, platformColor);
+        const platform2 = this.add.rectangle(worldWidth - 260, 420, 220, 22, platformColor, 0.95);
         this.physics.add.existing(platform2, true);
         this.platforms.add(platform2);
 
-        const platform3 = this.add.rectangle(worldWidth / 2, 320, 180, 18, perchColor);
+        const platform3 = this.add.rectangle(worldWidth / 2, 320, 190, 18, perchColor, 0.95);
         this.physics.add.existing(platform3, true);
         this.platforms.add(platform3);
 
-        const platform4 = this.add.rectangle(worldWidth / 2 - 200, 260, 120, 16, perchColor);
+        const platform4 = this.add.rectangle(worldWidth / 2 - 220, 250, 120, 16, perchColor, 0.9);
         this.physics.add.existing(platform4, true);
         this.platforms.add(platform4);
 
-        const platform5 = this.add.rectangle(worldWidth / 2 + 200, 260, 120, 16, perchColor);
+        const platform5 = this.add.rectangle(worldWidth / 2 + 220, 250, 120, 16, perchColor, 0.9);
         this.physics.add.existing(platform5, true);
         this.platforms.add(platform5);
+
+        this.decorateArena();
+    }
+
+    decorateArena() {
+        if (this.decorLayer) {
+            this.decorLayer.destroy(true);
+        }
+
+        this.decorLayer = this.add.container(0, 0).setDepth(-15);
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const palette = this.getActivePalette();
+
+        const graphics = this.add.graphics();
+        graphics.setDepth(-15);
+
+        switch (this.levelData.biome) {
+            case GameConfig.BIOMES.LANTERN_AVIARY:
+                graphics.lineStyle(2, MoonlitEnvironment.hexToColor(palette[4]).color, 0.4);
+                for (let i = 0; i < 6; i++) {
+                    const x = 120 + i * 160;
+                    graphics.lineBetween(x, 120, x + Phaser.Math.Between(-40, 40), 280);
+                }
+                break;
+            case GameConfig.BIOMES.SERPENTARIUM:
+                graphics.fillStyle(0x1d3a35, 0.6);
+                graphics.fillEllipse(width / 2, height - 70, 480, 120);
+                graphics.fillStyle(0x35a388, 0.35);
+                graphics.fillEllipse(width / 2 + 140, height - 60, 260, 80);
+                break;
+            case GameConfig.BIOMES.TIDE_PENS:
+                graphics.fillStyle(0x17415c, 0.65);
+                graphics.fillRect(0, height - 90, width, 90);
+                graphics.lineStyle(3, 0x3a83b7, 0.6);
+                for (let i = 0; i < width; i += 60) {
+                    graphics.strokeCircle(i, height - 90, Phaser.Math.Between(6, 16));
+                }
+                break;
+            case GameConfig.BIOMES.THORN_SANCTUM:
+                graphics.lineStyle(4, 0x567345, 0.6);
+                for (let i = 0; i < 12; i++) {
+                    const x = Phaser.Math.Between(60, width - 60);
+                    graphics.beginPath();
+                    graphics.moveTo(x, height);
+                    graphics.lineTo(x + Phaser.Math.Between(-40, 40), height - 200);
+                    graphics.lineTo(x + Phaser.Math.Between(-20, 20), height - 300);
+                    graphics.strokePath();
+                }
+                break;
+            case GameConfig.BIOMES.CROWN_CHAMBER:
+                graphics.lineStyle(3, 0xc997ff, 0.5);
+                for (let i = 0; i < 5; i++) {
+                    const startX = Phaser.Math.Between(80, width - 80);
+                    graphics.beginPath();
+                    graphics.moveTo(startX, height - 120);
+                    graphics.lineTo(startX + Phaser.Math.Between(-80, 80), height - 260);
+                    graphics.strokePath();
+                }
+                graphics.fillStyle(0x3d2748, 0.4);
+                graphics.fillCircle(width / 2, 160, 120);
+                break;
+        }
+
+        this.decorLayer.add(graphics);
     }
 
     createPlayer() {
@@ -369,60 +208,71 @@ class ZooScene extends Phaser.Scene {
     }
 
     setupUI() {
-        // Display user's tactical prompt
-        this.promptDisplay = this.add.text(20, 50,
-            `Instructions: ${GameState.missionPrompt.substring(0, 100)}${GameState.missionPrompt.length > 100 ? '...' : ''}`,
-            {
-                fontSize: '16px',
-                fontFamily: '"IBM Plex Serif", Georgia, serif',
-                color: '#f1e8d2',
-                backgroundColor: 'rgba(20, 24, 32, 0.68)',
-                padding: { x: 10, y: 8 },
-                wordWrap: { width: 800 }
-            }
-        ).setDepth(5);
+        const width = this.cameras.main.width;
 
-        // Create AI thought panel
+        const promptPanel = this.add.rectangle(width / 2, 84, 720, 100, 0x0d1424, 0.82)
+            .setStrokeStyle(2, 0x2c3a57)
+            .setDepth(12);
+
+        this.promptDisplay = this.add.text(width / 2, 84,
+            GameState.missionPrompt ? GameState.missionPrompt : 'No instructions received — RooKnight will improvise.', {
+            fontSize: '16px',
+            fontFamily: 'Space Grotesk',
+            color: '#f5ead4',
+            align: 'center',
+            wordWrap: { width: 660 }
+        }).setOrigin(0.5).setDepth(13);
+
         this.thoughtPanel = new AIThoughtPanel(this);
 
-        this.levelBadge = this.add.text(20, 150,
-            `Difficulty: ${this.levelData.title}\n${this.levelData.description}`, {
-            fontSize: '16px',
-            fontFamily: '"IBM Plex Serif", Georgia, serif',
-            color: '#d4e0ff',
-            backgroundColor: 'rgba(14, 18, 30, 0.68)',
-            padding: { x: 10, y: 6 }
-        }).setDepth(5);
+        this.runes = new MentorRunes(this);
 
-        // Create health bars
-        this.playerHealthBar = new HealthBar(this, 20, 110, this.player.health, 'RooKnight');
-        this.enemyHealthBar = new HealthBar(this, this.cameras.main.width - 280, 110, this.enemy.health, this.enemy.enemyType);
+        this.levelBadge = this.add.text(width - 320, 32,
+            `${this.levelData.description}`, {
+            fontSize: '14px',
+            fontFamily: 'Space Grotesk',
+            color: '#ffd7a8',
+            wordWrap: { width: 280 }
+        }).setDepth(12);
 
-        // Combo display with glow
-        this.comboGlow = this.add.circle(this.cameras.main.width / 2, 30, 80, 0xffdd00, 0);
-        this.comboGlow.setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+        this.playerHealthBar = new HealthBar(this, 30, 120, this.player.health, 'RooKnight');
+        this.enemyHealthBar = new HealthBar(this, width - 270, 120, this.enemy.health, this.enemy.enemyType);
 
-        this.comboText = this.add.text(this.cameras.main.width / 2, 30, '', {
-            fontSize: '36px',
-            fontFamily: 'Impact, monospace',
-            color: '#ffdd00',
+        this.comboGlow = this.add.circle(width / 2, 40, 80, 0x9fd6ff, 0).setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+
+        this.comboText = this.add.text(width / 2, 40, '', {
+            fontSize: '34px',
+            fontFamily: 'Space Grotesk',
+            color: '#cdd7ff',
             fontStyle: 'bold',
-            stroke: '#ff4400',
-            strokeThickness: 6
-        }).setOrigin(0.5).setDepth(10).setAlpha(0);
+            stroke: '#2c3a57',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(15).setAlpha(0);
     }
 
     setupAI() {
-        // AI decision loop
-        const interval = (this.levelData.modifiers?.aiInterval) || GameConfig.AI_DECISION_INTERVAL;
-        this.aiDecisionTimer = this.time.addEvent({
-            delay: interval,
-            callback: this.makeAIDecision,
-            callbackScope: this,
-            loop: true
-        });
-
+        this.aiDecisionInterval = (this.levelData.modifiers?.aiInterval) || GameConfig.AI_DECISION_INTERVAL;
         this.lastDecision = null;
+        this.scheduleNextDecision();
+    }
+
+    scheduleNextDecision() {
+        if (this.aiDecisionTimer) {
+            this.aiDecisionTimer.remove(false);
+        }
+        const jitter = Phaser.Math.Between(-160, 220);
+        const delay = Phaser.Math.Clamp(this.aiDecisionInterval + jitter, 360, 1800);
+        this.aiDecisionTimer = this.time.addEvent({
+            delay,
+            callback: async () => {
+                await this.makeAIDecision();
+                if (!this.battleEnded) {
+                    this.scheduleNextDecision();
+                }
+            },
+            callbackScope: this,
+            loop: false
+        });
     }
 
     setupInput() {
@@ -474,7 +324,8 @@ class ZooScene extends Phaser.Scene {
         const environment = {
             zone: GameState.currentBiome,
             lighting: 'dim',
-            hazards: 'none'
+            hazards: 'dynamic',
+            runes: { ...GameState.coaching }
         };
 
         // Get recent memories (last 5)
@@ -491,8 +342,7 @@ class ZooScene extends Phaser.Scene {
 
         this.lastDecision = decision;
 
-        // Display AI reasoning
-        this.thoughtPanel.showThought(decision.reasoning, decision.confidence);
+        this.thoughtPanel.showThought(decision);
 
         // Execute the decision
         this.executeAIAction(decision.action);
@@ -628,25 +478,17 @@ class ZooScene extends Phaser.Scene {
     }
 
     animateBackground(time) {
-        if (this.lightBeams) {
-            this.lightBeams.forEach((beam, index) => {
-                beam.alpha = 0.06 + Math.sin(time * 0.0006 + index) * 0.025;
-            });
+        if (this.parallaxCages) {
+            this.parallaxCages.x = Math.sin(time * 0.0002) * 12;
         }
 
-        if (this.backgroundLayers?.menagerie) {
-            this.backgroundLayers.menagerie.x = Math.sin(time * 0.00018) * 10;
+        if (this.moon) {
+            this.moon.y = this.cameras.main.height * 0.18 + Math.sin(time * 0.0003) * 6;
         }
 
-        if (this.volumetricFog) {
-            this.volumetricFog.forEach((fog, index) => {
-                fog.sprite.x = fog.baseX + Math.sin(time * fog.speed + index) * fog.sway;
-                fog.sprite.alpha = 0.1 + Math.abs(Math.sin(time * (fog.speed * 1200) + index)) * 0.12;
-            });
-        }
-
-        if (this.foregroundFog) {
-            this.foregroundFog.alpha = 0.18 + Math.sin(time * 0.0008) * 0.06;
+        if (this.fogLayer) {
+            this.fogLayer.x = this.cameras.main.width / 2 + Math.sin(time * 0.00025) * 30;
+            this.fogLayer.alpha = 0.18 + Math.sin(time * 0.0005) * 0.06;
         }
     }
 
@@ -845,17 +687,17 @@ class ZooScene extends Phaser.Scene {
 
                 // Color shift for high combos
                 if (combo.count >= 5) {
-                    this.comboText.setColor('#ff00ff');
-                    this.comboText.setStroke('#ff0000', 6);
-                    if (this.comboGlow) this.comboGlow.setFillStyle(0xff00ff);
+                    this.comboText.setColor('#c997ff');
+                    this.comboText.setStroke('#4b2a60', 5);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0xc997ff);
                 } else if (combo.count >= 3) {
-                    this.comboText.setColor('#ff8800');
-                    this.comboText.setStroke('#ff4400', 6);
-                    if (this.comboGlow) this.comboGlow.setFillStyle(0xff8800);
+                    this.comboText.setColor('#8fb0ff');
+                    this.comboText.setStroke('#2c3a57', 5);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0x8fb0ff);
                 } else {
-                    this.comboText.setColor('#ffdd00');
-                    this.comboText.setStroke('#ff4400', 6);
-                    if (this.comboGlow) this.comboGlow.setFillStyle(0xffdd00);
+                    this.comboText.setColor('#ffd7a8');
+                    this.comboText.setStroke('#59402d', 4);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0xffd7a8);
                 }
             } else {
                 this.comboText.setAlpha(Math.max(0, this.comboText.alpha - 0.02));
@@ -889,17 +731,8 @@ class ZooScene extends Phaser.Scene {
     }
 
     getActivePalette() {
-        const palette = GameConfig.PALETTES?.[GameState.currentBiome] || GameConfig.PALETTES.RooSanctum;
+        const fallback = Object.values(GameConfig.PALETTES)[0];
+        const palette = GameConfig.PALETTES?.[GameState.currentBiome] || fallback;
         return palette;
-    }
-
-    hexToColor(hex) {
-        if (!hex) {
-            return Phaser.Display.Color.HexStringToColor('#1a1a2e');
-        }
-        if (!hex.startsWith('#')) {
-            hex = `#${hex}`;
-        }
-        return Phaser.Display.Color.HexStringToColor(hex);
     }
 }

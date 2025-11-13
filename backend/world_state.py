@@ -10,138 +10,110 @@ class WorldState:
     def _initialize_biomes(self):
         """Define all zoo biomes"""
         return {
-            "RooSanctum": {
-                "name": "Roo Sanctum",
-                "description": "The main kangaroo habitat, now overrun with aggressive AI kangaroos",
-                "lighting": "dim",
-                "hazards": ["spike pits", "unstable platforms"],
-                "atmosphere": "eerie",
-                "enemies": ["Scout Roo", "Alpha Kangaroo", "Roo Brute"],
-                "color_palette": ["#2a1a1f", "#4a3a3f", "#6a5a5f"]
+            "LanternAviary": {
+                "name": "Lantern Aviary",
+                "description": "Moonlit rafters and suspended cages shimmering with drifting feathers.",
+                "lighting": "dusklit",
+                "hazards": ["shifting rafters", "falling lantern glass"],
+                "atmosphere": "hushed",
+                "enemies": ["Nyx, Owl Warden"],
+                "color_palette": ["#05060f", "#1b2440", "#3c5e7f"]
             },
-            "DesertDome": {
-                "name": "Desert Dome",
-                "description": "A simulated desert environment with harsh lighting and sand traps",
-                "lighting": "bright",
-                "hazards": ["quicksand", "heat vents"],
-                "atmosphere": "harsh",
-                "enemies": ["Desert Roo", "Sand Striker"],
-                "color_palette": ["#c4a573", "#8b7355", "#d4af37"]
+            "Serpentarium": {
+                "name": "Shattered Serpentarium",
+                "description": "Cracked terrarium panes leak fog where serpents once basked.",
+                "lighting": "veiled",
+                "hazards": ["venom pools", "lash traps"],
+                "atmosphere": "tense",
+                "enemies": ["Vey, Serpent Matron"],
+                "color_palette": ["#090c13", "#1d2a2a", "#35534b"]
             },
-            "AquaVault": {
-                "name": "Aqua Vault",
-                "description": "Flooded underground aquarium with limited visibility",
-                "lighting": "low",
-                "hazards": ["deep water", "electric currents"],
-                "atmosphere": "claustrophobic",
-                "enemies": ["Aqua Roo", "Tide Jumper"],
-                "color_palette": ["#1a3a4a", "#2a4a5a", "#3a5a6a"]
+            "TidePens": {
+                "name": "Tideworn Pens",
+                "description": "Flooded walkways echo with the crash of distant waves.",
+                "lighting": "misty",
+                "hazards": ["tidal surges", "slippery grates"],
+                "atmosphere": "brumal",
+                "enemies": ["Oran, Leviathan Seal"],
+                "color_palette": ["#04070e", "#14253f", "#1e3f61"]
             },
-            "ThornGarden": {
-                "name": "Thorn Garden",
-                "description": "Overgrown botanical section with dangerous flora",
-                "lighting": "filtered",
-                "hazards": ["thorny vines", "poison spores"],
-                "atmosphere": "overgrown",
-                "enemies": ["Garden Roo", "Thorn Hopper"],
-                "color_palette": ["#2a4a2a", "#3a5a3a", "#1a3a1a"]
+            "ThornSanctum": {
+                "name": "Thornbound Conservatory",
+                "description": "Vines knot around shattered glass, choking moonbeams to a murmur.",
+                "lighting": "dappled",
+                "hazards": ["snaring vines", "spore clouds"],
+                "atmosphere": "foreboding",
+                "enemies": ["Maul, Briar Bear"],
+                "color_palette": ["#06060b", "#1f2421", "#3c4a30"]
             },
-            "KingsChamber": {
-                "name": "King's Chamber",
-                "description": "The central chamber where the Kangaroo King resides",
-                "lighting": "dramatic",
-                "hazards": ["collapsing ceiling", "energy barriers"],
-                "atmosphere": "ominous",
-                "enemies": ["Kangaroo King"],
-                "color_palette": ["#4a1a2a", "#6a2a3a", "#8a3a4a"]
+            "CrownChamber": {
+                "name": "Crown of Bars",
+                "description": "The final menagerie dais crowned by iron bars and spectral fire.",
+                "lighting": "auroral",
+                "hazards": ["cracking pillars", "resonant roars"],
+                "atmosphere": "imperious",
+                "enemies": ["Rex, Lion Regent"],
+                "color_palette": ["#08060a", "#241830", "#3d2748"]
             }
         }
 
     def _initialize_enemies(self):
         """Define all enemy types and their characteristics"""
         return {
-            "Scout Roo": {
-                "type": "Scout Roo",
-                "description": "Fast, lightweight kangaroo that focuses on quick jabs",
-                "health": 60,
-                "speed": "high",
-                "attack_pattern": "Quick double-jab then retreat",
-                "weakness": "Low defense, vulnerable after attacks",
-                "abilities": ["Quick Jab", "Retreat Hop"],
-                "aggression": 70,
-                "intelligence": 50
+            "Nyx, Owl Warden": {
+                "type": "Nyx, Owl Warden",
+                "description": "A spectral owl whose lantern talons test fledgling tacticians.",
+                "health": 65,
+                "speed": "measured",
+                "attack_pattern": "Lantern dive followed by sweeping talon arcs",
+                "weakness": "Tires after prolonged air time",
+                "abilities": ["Lantern Dive", "Echo Sweep", "Feather Flare"],
+                "aggression": 42,
+                "intelligence": 71
             },
-            "Alpha Kangaroo": {
-                "type": "Alpha Kangaroo",
-                "description": "Balanced fighter with strong kicks and tactical awareness",
-                "health": 100,
-                "speed": "medium",
-                "attack_pattern": "Jump attack followed by ground pound",
-                "weakness": "Predictable landing spots",
-                "abilities": ["Jump Attack", "Ground Pound", "Tail Sweep"],
-                "aggression": 60,
-                "intelligence": 70
+            "Vey, Serpent Matron": {
+                "type": "Vey, Serpent Matron",
+                "description": "Keeper of the shattered terrarium who lashes with venomous precision.",
+                "health": 110,
+                "speed": "coiled bursts",
+                "attack_pattern": "Venom spray, tail sweep, constrict",
+                "weakness": "Recovery frames after tail slams",
+                "abilities": ["Venom Spray", "Glass Lash", "Constrict"],
+                "aggression": 58,
+                "intelligence": 68
             },
-            "Roo Brute": {
-                "type": "Roo Brute",
-                "description": "Heavy, slow kangaroo with devastating power",
-                "health": 150,
-                "speed": "low",
-                "attack_pattern": "Charge attack and heavy slams",
-                "weakness": "Slow turn speed, long recovery times",
-                "abilities": ["Charge", "Heavy Slam", "Shockwave"],
-                "aggression": 80,
-                "intelligence": 40
+            "Oran, Leviathan Seal": {
+                "type": "Oran, Leviathan Seal",
+                "description": "A colossal seal who surges across the flooded pens in rhythmic waves.",
+                "health": 145,
+                "speed": "surging",
+                "attack_pattern": "Wave crash and rolling maul",
+                "weakness": "Exposed belly after rolling charge",
+                "abilities": ["Wave Crash", "Tidal Roar", "Rolling Maul"],
+                "aggression": 66,
+                "intelligence": 54
             },
-            "Desert Roo": {
-                "type": "Desert Roo",
-                "description": "Heat-adapted kangaroo with sand-based attacks",
-                "health": 80,
-                "speed": "high",
-                "attack_pattern": "Sand kick then aerial dive",
-                "weakness": "Needs space to maneuver",
-                "abilities": ["Sand Kick", "Aerial Dive", "Mirage"],
-                "aggression": 65,
-                "intelligence": 60
+            "Maul, Briar Bear": {
+                "type": "Maul, Briar Bear",
+                "description": "An armored bear woven with thorned vines that lash on command.",
+                "health": 190,
+                "speed": "stalking",
+                "attack_pattern": "Vine snare, armored slam, pollen roar",
+                "weakness": "Slow to pivot mid-charge",
+                "abilities": ["Vine Snare", "Armored Slam", "Pollen Roar"],
+                "aggression": 74,
+                "intelligence": 61
             },
-            "Aqua Roo": {
-                "type": "Aqua Roo",
-                "description": "Amphibious kangaroo with water manipulation",
-                "health": 90,
-                "speed": "medium",
-                "attack_pattern": "Splash attack then underwater retreat",
-                "weakness": "Weaker on dry land",
-                "abilities": ["Splash Attack", "Water Jet", "Dive"],
-                "aggression": 50,
-                "intelligence": 65
-            },
-            "Garden Roo": {
-                "type": "Garden Roo",
-                "description": "Kangaroo that uses plant-based attacks",
-                "health": 70,
-                "speed": "medium",
-                "attack_pattern": "Thorn throw then vine entangle",
-                "weakness": "Fire-based attacks",
-                "abilities": ["Thorn Throw", "Vine Entangle", "Pollen Cloud"],
-                "aggression": 55,
-                "intelligence": 70
-            },
-            "Kangaroo King": {
-                "type": "Kangaroo King",
-                "description": "Boss - Massive AI kangaroo with all abilities",
-                "health": 300,
-                "speed": "medium",
-                "attack_pattern": "Multi-phase combat with varying strategies",
-                "weakness": "Overconfident, can be baited",
-                "abilities": [
-                    "Royal Charge",
-                    "Aerial Devastation",
-                    "Summon Guards",
-                    "King's Roar",
-                    "Adaptive Counter"
-                ],
-                "aggression": 75,
-                "intelligence": 90
+            "Rex, Lion Regent": {
+                "type": "Rex, Lion Regent",
+                "description": "The final sovereign whose roar fractures stone and morale alike.",
+                "health": 250,
+                "speed": "regal pounce",
+                "attack_pattern": "Roar shockwave, claw combo, aerial maul",
+                "weakness": "Briefly exposed after roar crescendos",
+                "abilities": ["Crown Roar", "Imperial Maul", "Celestial Pounce"],
+                "aggression": 86,
+                "intelligence": 79
             }
         }
 
