@@ -40,20 +40,20 @@ class PromptScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        // Example prompts (moved higher)
-        const examples = this.add.text(512, 270,
-            'Examples: "Stay defensive until HP < 50%", "Dodge & observe patterns", "Jump attacks, retreat if HP < 40%"',
+        // Example prompts text
+        this.add.text(512, 270,
+            'Example: "Stay defensive until enemy HP < 50%, dodge all attacks, strike when vulnerable, retreat if my HP < 30%"',
             {
-                fontSize: '12px',
+                fontSize: '13px',
                 fontFamily: 'monospace',
                 color: '#8a7a6a',
                 align: 'center',
-                wordWrap: { width: 750 }
+                wordWrap: { width: 850 }
             }
         ).setOrigin(0.5);
 
         // Label for textarea
-        this.add.text(512, 330, 'YOUR TACTICAL INSTRUCTIONS:', {
+        this.add.text(512, 320, 'YOUR TACTICAL INSTRUCTIONS:', {
             fontSize: '14px',
             fontFamily: 'monospace',
             color: '#c4a573',

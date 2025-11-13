@@ -191,6 +191,19 @@ class ZooScene extends Phaser.Scene {
         // Create health bars
         this.playerHealthBar = new HealthBar(this, 20, 110, this.player.health, 'RooKnight');
         this.enemyHealthBar = new HealthBar(this, this.cameras.main.width - 280, 110, this.enemy.health, this.enemy.enemyType);
+
+        // Combo display with glow
+        this.comboGlow = this.add.circle(this.cameras.main.width / 2, 30, 80, 0xffdd00, 0);
+        this.comboGlow.setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+
+        this.comboText = this.add.text(this.cameras.main.width / 2, 30, '', {
+            fontSize: '36px',
+            fontFamily: 'Impact, monospace',
+            color: '#ffdd00',
+            fontStyle: 'bold',
+            stroke: '#ff4400',
+            strokeThickness: 6
+        }).setOrigin(0.5).setDepth(10).setAlpha(0);
     }
 
     setupAI() {
@@ -321,6 +334,15 @@ class ZooScene extends Phaser.Scene {
     }
 
     async endBattle(outcome) {
+        // Spectacular battle end effects
+        if (outcome === 'victory') {
+            this.createVictoryEffect();
+            this.cameras.main.flash(1000, 100, 255, 100, false, 0.5);
+        } else {
+            this.createDefeatEffect();
+            this.cameras.main.flash(800, 255, 50, 50, false, 0.4);
+        }
+
         // Stop AI decisions
         if (this.aiDecisionTimer) {
             this.aiDecisionTimer.remove();
@@ -494,6 +516,84 @@ class ZooScene extends Phaser.Scene {
         });
     }
 
+    createVictoryEffect() {
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+
+        // Victory burst particles
+        for (let i = 0; i < 50; i++) {
+            const angle = (Math.PI * 2 * i) / 50;
+            const speed = Phaser.Math.Between(200, 400);
+            const particle = this.add.circle(centerX, centerY, Phaser.Math.Between(4, 8), 0x00ff00, 1);
+            particle.setDepth(200);
+
+            this.tweens.add({
+                targets: particle,
+                x: centerX + Math.cos(angle) * speed,
+                y: centerY + Math.sin(angle) * speed,
+                alpha: 0,
+                duration: 1500,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+
+        // Victory rings
+        for (let i = 0; i < 3; i++) {
+            const ring = this.add.circle(centerX, centerY, 20, 0x00ff00, 0);
+            ring.setStrokeStyle(5, 0xffff00, 1);
+            ring.setDepth(199);
+
+            this.tweens.add({
+                targets: ring,
+                radius: 300 + (i * 100),
+                alpha: 0,
+                delay: i * 200,
+                duration: 1200,
+                ease: 'Cubic.easeOut',
+                onComplete: () => ring.destroy()
+            });
+        }
+    }
+
+    createDefeatEffect() {
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+
+        // Defeat implosion particles
+        for (let i = 0; i < 40; i++) {
+            const startX = Phaser.Math.Between(0, this.cameras.main.width);
+            const startY = Phaser.Math.Between(0, this.cameras.main.height);
+            const particle = this.add.circle(startX, startY, Phaser.Math.Between(3, 6), 0xff0000, 1);
+            particle.setDepth(200);
+
+            this.tweens.add({
+                targets: particle,
+                x: centerX,
+                y: centerY,
+                alpha: 0,
+                scale: 0,
+                duration: 1000,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+
+        // Defeat shockwave
+        const wave = this.add.circle(centerX, centerY, 300, 0xff0000, 0);
+        wave.setStrokeStyle(6, 0xff0000, 0.8);
+        wave.setDepth(199);
+
+        this.tweens.add({
+            targets: wave,
+            radius: 50,
+            alpha: 0,
+            duration: 800,
+            ease: 'Cubic.easeIn',
+            onComplete: () => wave.destroy()
+        });
+    }
+
     update(time, delta) {
         this.animateBackground(time);
         this.handleArenaFlow(time, delta);
@@ -504,6 +604,48 @@ class ZooScene extends Phaser.Scene {
         }
         if (this.enemyHealthBar) {
             this.enemyHealthBar.update(this.enemy.health);
+        }
+
+        // Update combo display
+        if (this.player && this.comboText) {
+            const combo = this.player.getComboInfo();
+            if (combo.count > 1) {
+                this.comboText.setText(`${combo.count}x COMBO • ${Math.round((combo.multiplier - 1) * 100)}% DMG`);
+                this.comboText.setAlpha(1);
+
+                // Pulse effect with intensity based on combo
+                const pulseIntensity = Math.min(combo.count * 0.03, 0.15);
+                const scale = 1 + Math.sin(time * 0.015) * pulseIntensity;
+                this.comboText.setScale(scale);
+
+                // Glowing background effect
+                if (this.comboGlow) {
+                    const glowAlpha = 0.2 + Math.sin(time * 0.01) * 0.1;
+                    const glowScale = 1 + combo.count * 0.15;
+                    this.comboGlow.setAlpha(glowAlpha);
+                    this.comboGlow.setScale(glowScale);
+                }
+
+                // Color shift for high combos
+                if (combo.count >= 5) {
+                    this.comboText.setColor('#ff00ff');
+                    this.comboText.setStroke('#ff0000', 6);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0xff00ff);
+                } else if (combo.count >= 3) {
+                    this.comboText.setColor('#ff8800');
+                    this.comboText.setStroke('#ff4400', 6);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0xff8800);
+                } else {
+                    this.comboText.setColor('#ffdd00');
+                    this.comboText.setStroke('#ff4400', 6);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0xffdd00);
+                }
+            } else {
+                this.comboText.setAlpha(Math.max(0, this.comboText.alpha - 0.02));
+                if (this.comboGlow) {
+                    this.comboGlow.setAlpha(Math.max(0, this.comboGlow.alpha - 0.02));
+                }
+            }
         }
 
         // Check for battle end

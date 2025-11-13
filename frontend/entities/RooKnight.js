@@ -38,6 +38,13 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
 
         // Combat stats
         this.blockReduction = 0.35;
+
+        // Combo system
+        this.comboCount = 0;
+        this.lastActionTime = 0;
+        this.lastActionType = null;
+        this.actionHistory = [];
+        this.comboDamageMultiplier = 1.0;
     }
 
     updateGraphics() {
@@ -62,6 +69,7 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
         if (this.isAttacking || !target) return;
 
         this.isAttacking = true;
+        this.trackAction('ATTACK');
 
         // Move towards target
         const direction = target.x > this.x ? 1 : -1;
@@ -74,11 +82,25 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(140, () => {
             const updatedDistance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
             if (updatedDistance < 85) {
-                let damage = this.attackDamage;
+                let damage = this.attackDamage * this.comboDamageMultiplier;
                 if (updatedDistance < 50 && Math.random() < 0.4) {
                     damage *= this.critMultiplier;
+                    this.showFloatingText('CRIT!', 0xff6600);
+                    this.scene.cameras.main.shake(100, 0.003);
+                    this.createImpactEffect(target.x, target.y, 0xff6600, true);
+                } else {
+                    this.createImpactEffect(target.x, target.y, 0xffffff, false);
                 }
                 target.takeDamage(damage, this.scene);
+
+                // Show combo
+                if (this.comboCount > 1) {
+                    this.showFloatingText(`${this.comboCount}x COMBO`, 0xffdd00);
+                }
+
+                // Impact feedback
+                this.scene.cameras.main.shake(80, 0.002);
+                this.scene.cameras.main.flash(50, 255, 255, 255, false, 0.15);
             }
         });
 
@@ -94,6 +116,8 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
     jumpAttack(target) {
         if (!target) return;
 
+        this.trackAction('JUMP_ATTACK');
+
         const direction = target.x > this.x ? 1 : -1;
         this.facingRight = direction > 0;
 
@@ -102,10 +126,25 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
         this.body.setVelocityX(direction * GameConfig.PLAYER.SPEED);
         this.lastAerialTime = this.scene.time.now;
 
+        // Create trail effect
+        this.createTrailEffect();
+
         this.scene.time.delayedCall(200, () => {
             const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
             if (distance < 90) {
-                target.takeDamage(this.attackDamage * 1.6, this.scene);
+                let damage = this.attackDamage * 1.6 * this.comboDamageMultiplier;
+                target.takeDamage(damage, this.scene);
+                this.showFloatingText('AERIAL STRIKE!', 0x00aaff);
+
+                if (this.comboCount > 2) {
+                    this.showFloatingText(`${this.comboCount}x COMBO`, 0xffdd00);
+                }
+
+                // Heavy impact for aerial attacks
+                this.scene.cameras.main.shake(150, 0.005);
+                this.scene.cameras.main.flash(80, 100, 170, 255, false, 0.25);
+                this.createImpactEffect(target.x, target.y, 0x00aaff, true);
+                this.createShockwave(target.x, target.y);
             }
         });
 
@@ -241,6 +280,131 @@ class RooKnight extends Phaser.Physics.Arcade.Sprite {
             duration: 250,
             yoyo: true,
             repeat: 3
+        });
+    }
+
+    trackAction(actionType) {
+        const now = this.scene.time.now;
+        const timeSinceLastAction = now - this.lastActionTime;
+
+        // Reset combo if too much time passed or same action repeated
+        if (timeSinceLastAction > 2000 || actionType === this.lastActionType) {
+            this.comboCount = 1;
+            this.comboDamageMultiplier = 1.0;
+        } else {
+            // Build combo for varied actions
+            this.comboCount++;
+            this.comboDamageMultiplier = Math.min(1.0 + (this.comboCount * 0.1), 1.5); // Max 50% bonus
+        }
+
+        this.lastActionTime = now;
+        this.lastActionType = actionType;
+        this.actionHistory.push({ action: actionType, time: now });
+
+        // Keep only last 10 actions
+        if (this.actionHistory.length > 10) {
+            this.actionHistory.shift();
+        }
+    }
+
+    showFloatingText(text, color = 0xffffff) {
+        if (!this.scene || !this.scene.add) return;
+
+        const floatText = this.scene.add.text(this.x, this.y - 50, text, {
+            fontSize: '16px',
+            fontFamily: 'monospace',
+            color: `#${color.toString(16).padStart(6, '0')}`,
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+
+        this.scene.tweens.add({
+            targets: floatText,
+            y: floatText.y - 40,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Sine.easeOut',
+            onComplete: () => floatText.destroy()
+        });
+    }
+
+    getComboInfo() {
+        return {
+            count: this.comboCount,
+            multiplier: this.comboDamageMultiplier,
+            lastAction: this.lastActionType
+        };
+    }
+
+    createImpactEffect(x, y, color, isCrit = false) {
+        if (!this.scene) return;
+
+        const particleCount = isCrit ? 25 : 15;
+        const radius = isCrit ? 60 : 40;
+
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const speed = isCrit ? Phaser.Math.Between(150, 250) : Phaser.Math.Between(100, 180);
+
+            const particle = this.scene.add.circle(x, y, isCrit ? 4 : 3, color, 1);
+            particle.setDepth(100);
+
+            this.scene.tweens.add({
+                targets: particle,
+                x: x + Math.cos(angle) * radius,
+                y: y + Math.sin(angle) * radius,
+                alpha: 0,
+                scale: 0,
+                duration: isCrit ? 500 : 350,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
+
+        // Impact flash ring
+        const ring = this.scene.add.circle(x, y, 10, color, 0.6);
+        ring.setDepth(99);
+        this.scene.tweens.add({
+            targets: ring,
+            radius: radius * 1.5,
+            alpha: 0,
+            duration: 400,
+            ease: 'Power2',
+            onComplete: () => ring.destroy()
+        });
+    }
+
+    createShockwave(x, y) {
+        if (!this.scene) return;
+
+        const wave = this.scene.add.circle(x, y, 15, 0x00aaff, 0);
+        wave.setStrokeStyle(4, 0x00aaff, 0.8);
+        wave.setDepth(98);
+
+        this.scene.tweens.add({
+            targets: wave,
+            radius: 100,
+            alpha: 0,
+            duration: 600,
+            ease: 'Cubic.easeOut',
+            onComplete: () => wave.destroy()
+        });
+    }
+
+    createTrailEffect() {
+        if (!this.scene) return;
+
+        const trail = this.scene.add.circle(this.x, this.y, 20, 0x6a8aff, 0.4);
+        trail.setDepth(-1);
+
+        this.scene.tweens.add({
+            targets: trail,
+            alpha: 0,
+            scale: 1.5,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => trail.destroy()
         });
     }
 
