@@ -24,13 +24,18 @@ const GameState = {
     missionPrompt: '',  // User's tactical instructions
     lastPrompt: '',
     memory: [],
-    currentBiome: GameConfig.BIOMES.ROO_SANCTUM,
+    currentBiome: GameConfig.BIOMES.LANTERN_AVIARY,
     agentLevel: 1,
     battlesWon: 0,
     battlesLost: 0,
     currentLevelIndex: 0,
     unlockedLevelCount: 1,
-    levelHistory: {}
+    levelHistory: {},
+    coaching: {
+        aggression: 35,
+        caution: 55,
+        curiosity: 60
+    }
 };
 
 // Hide loading screen when game is ready

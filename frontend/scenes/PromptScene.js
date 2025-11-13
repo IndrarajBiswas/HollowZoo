@@ -6,108 +6,120 @@ class PromptScene extends Phaser.Scene {
     create() {
         this.levelData = GameConfig.LEVELS[GameState.currentLevelIndex] || GameConfig.LEVELS[0];
 
-        // Dark background
-        this.cameras.main.setBackgroundColor('#1a1a2e');
+        const { width, height } = this.cameras.main;
+        this.cameras.main.setBackgroundColor('#080b15');
 
-        // Title
-        this.add.text(512, 90, '🎯 MISSION BRIEFING', {
-            fontSize: '36px',
-            fontFamily: 'monospace',
-            color: '#8a7a6a',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
+        const backdrop = this.add.graphics();
+        for (let i = 0; i <= height; i += 4) {
+            const c = Phaser.Display.Color.Interpolate.ColorWithColor(
+                Phaser.Display.Color.HexStringToColor('#070910'),
+                Phaser.Display.Color.HexStringToColor('#121b2e'),
+                height,
+                i
+            );
+            backdrop.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
+            backdrop.fillRect(0, i, width, 4);
+        }
 
-        // Instructions
-        const instructions = this.add.text(512, 150,
-            'Give your AI agent tactical instructions for this mission.\n' +
-            'Be specific! Your prompt quality determines success or failure.',
-            {
-                fontSize: '16px',
-                fontFamily: 'monospace',
-                color: '#e0e0e0',
-                align: 'center',
-                wordWrap: { width: 800 }
-            }
-        ).setOrigin(0.5);
+        const table = this.add.rectangle(width / 2, height / 2 + 40, 960, 520, 0x121b2e, 0.92)
+            .setStrokeStyle(2, 0x2e3d5a)
+            .setDepth(2);
 
-        this.add.text(512, 210,
-            `Level ${this.levelData.id}: ${this.levelData.title}\nBiome: ${this.levelData.biome} • Enemy: ${this.levelData.enemyType}`,
-            {
-                fontSize: '18px',
-                fontFamily: 'monospace',
-                color: '#c4a573',
-                align: 'center'
-            }
-        ).setOrigin(0.5);
+        const vignette = this.add.rectangle(width / 2, height / 2, width, height, 0x05060a, 0.35).setDepth(1);
 
-        // Example prompts text
-        this.add.text(512, 270,
-            'Example: "Stay defensive until enemy HP < 50%, dodge all attacks, strike when vulnerable, retreat if my HP < 30%"',
-            {
-                fontSize: '13px',
-                fontFamily: 'monospace',
-                color: '#8a7a6a',
-                align: 'center',
-                wordWrap: { width: 850 }
-            }
-        ).setOrigin(0.5);
+        this.add.text(width / 2, 80, 'Moonlit Mission Ledger', {
+            fontSize: '40px',
+            fontFamily: 'IM Fell English SC, serif',
+            color: '#f5ead4'
+        }).setOrigin(0.5).setDepth(3);
 
-        // Label for textarea
-        this.add.text(512, 320, 'YOUR TACTICAL INSTRUCTIONS:', {
+        this.add.text(width / 2, 128, 'Ink precise instructions. RooKnight obeys the parchment you scribe.', {
+            fontSize: '18px',
+            fontFamily: 'Space Grotesk',
+            color: '#aab8e8',
+            align: 'center',
+            wordWrap: { width: 820 }
+        }).setOrigin(0.5).setDepth(3);
+
+        const flavor = `Warden ${this.levelData.id}: ${this.levelData.title}\n${this.levelData.enemyType} • ${this.levelData.difficultyTier}`;
+        this.add.text(width / 2, 188, flavor, {
+            fontSize: '20px',
+            fontFamily: 'Space Grotesk',
+            color: '#ffd7a8',
+            align: 'center'
+        }).setOrigin(0.5).setDepth(3);
+
+        const loreText = `${this.levelData.description}`;
+        this.add.text(width / 2, 236, loreText, {
+            fontSize: '15px',
+            fontFamily: 'Space Grotesk',
+            color: '#f1e8d4',
+            align: 'center',
+            wordWrap: { width: 780 }
+        }).setOrigin(0.5).setDepth(3);
+
+        this.add.text(width / 2, 300, `Prompt Scaffold: ${this.levelData.promptScaffold}`, {
             fontSize: '14px',
-            fontFamily: 'monospace',
-            color: '#c4a573',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
+            fontFamily: 'Space Grotesk',
+            color: '#9fd6ff',
+            align: 'center',
+            wordWrap: { width: 780 }
+        }).setOrigin(0.5).setDepth(3);
 
-        // Create HTML textarea for prompt input (better than Phaser text input)
+        this.add.text(width / 2, 340, `Mentor Hint: ${this.levelData.mentorHint}`, {
+            fontSize: '14px',
+            fontFamily: 'Space Grotesk',
+            color: '#b9c9ff',
+            align: 'center',
+            wordWrap: { width: 780 }
+        }).setOrigin(0.5).setDepth(3);
+
+        this.add.text(width / 2, 382, 'Scribe your tactical instructions below. Reference rune moods, health thresholds, and distance cues.', {
+            fontSize: '15px',
+            fontFamily: 'Space Grotesk',
+            color: '#aab8e8',
+            align: 'center',
+            wordWrap: { width: 820 }
+        }).setOrigin(0.5).setDepth(3);
+
         this.createPromptInput();
 
-        // Start Mission button
-        const startButton = this.add.rectangle(512, 590, 300, 60, 0x8a7a6a)
-            .setInteractive({ useHandCursor: true });
+        const startButton = this.add.rectangle(width / 2, 640, 320, 64, 0x1b2134, 0.95)
+            .setStrokeStyle(2, 0x8fb0ff)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(3);
 
-        const startText = this.add.text(512, 590, 'START MISSION', {
+        const startText = this.add.text(width / 2, 640, 'Dispatch RooKnight', {
             fontSize: '24px',
-            fontFamily: 'monospace',
-            color: '#1a1a2e',
+            fontFamily: 'Space Grotesk',
+            color: '#f5ead4',
             fontStyle: 'bold'
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setDepth(4);
 
-        startButton.on('pointerover', () => {
-            startButton.setFillStyle(0xa49a8a);
-        });
+        startButton.on('pointerover', () => startButton.setFillStyle(0x242c44, 0.96));
+        startButton.on('pointerout', () => startButton.setFillStyle(0x1b2134, 0.95));
+        startButton.on('pointerdown', () => this.startMission());
 
-        startButton.on('pointerout', () => {
-            startButton.setFillStyle(0x8a7a6a);
-        });
+        const backButton = this.add.text(48, 52, '⟵ Return to Ledger', {
+            fontSize: '18px',
+            fontFamily: 'Space Grotesk',
+            color: '#8fb0ff'
+        }).setInteractive({ useHandCursor: true }).setDepth(4);
 
-        startButton.on('pointerdown', () => {
-            this.startMission();
-        });
-
-        // Back button
-        const backButton = this.add.text(40, 50, '← BACK', {
-            fontSize: '20px',
-            fontFamily: 'monospace',
-            color: '#8a7a6a'
-        }).setInteractive({ useHandCursor: true });
-
-        backButton.on('pointerover', () => backButton.setColor('#c4a573'));
-        backButton.on('pointerout', () => backButton.setColor('#8a7a6a'));
+        backButton.on('pointerover', () => backButton.setColor('#c8d6ff'));
+        backButton.on('pointerout', () => backButton.setColor('#8fb0ff'));
         backButton.on('pointerdown', () => {
             this.removePromptInput();
             this.scene.start('MenuScene');
         });
 
-        // Level modifier summary
-        this.add.text(512, 670, `Enemy difficulty boosts: ${this.describeModifiers(this.levelData.modifiers)}`, {
-            fontSize: '15px',
-            fontFamily: 'monospace',
-            color: '#aa8a4a',
+        this.add.text(width / 2, 700, `Enemy difficulty boosts: ${this.describeModifiers(this.levelData.modifiers)}`, {
+            fontSize: '14px',
+            fontFamily: 'Space Grotesk',
+            color: '#ffd48f',
             align: 'center',
-            wordWrap: { width: 840 }
-        }).setOrigin(0.5);
+            wordWrap: { width: 780 }
+        }).setOrigin(0.5).setDepth(3);
     }
 
     describeModifiers(modifiers = {}) {
@@ -128,34 +140,36 @@ class PromptScene extends Phaser.Scene {
         // Create HTML textarea overlay
         const textarea = document.createElement('textarea');
         textarea.id = 'mission-prompt';
-        textarea.placeholder = 'Enter tactical instructions here...\n\nTip: call out health thresholds, distance rules, and action priorities (attack/defend/jump).';
+        textarea.placeholder = 'Ink RooKnight\'s orders...\n\nCall out rune moods (Feral/Cautious/Naturalist), distance rules, health thresholds, and finishing patterns.';
         textarea.value = GameState.lastPrompt || '';
         textarea.style.cssText = `
             position: absolute;
             left: 50%;
-            top: 360px;
+            top: 410px;
             transform: translateX(-50%);
-            width: 680px;
-            height: 160px;
-            padding: 18px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            background: #2a2a3e;
-            color: #e0e0e0;
-            border: 2px solid #8a7a6a;
-            border-radius: 10px;
+            width: 720px;
+            height: 170px;
+            padding: 20px 24px;
+            font-family: 'Space Grotesk', 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.5;
+            background: rgba(12, 18, 32, 0.9);
+            color: #f1e8d4;
+            border: 2px solid rgba(143, 176, 255, 0.7);
+            border-radius: 16px;
             resize: none;
             outline: none;
             z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            box-shadow: 0 18px 40px rgba(5, 8, 20, 0.55);
+            backdrop-filter: blur(4px);
         `;
 
         textarea.addEventListener('focus', () => {
-            textarea.style.borderColor = '#c4a573';
+            textarea.style.borderColor = '#cdd7ff';
         });
 
         textarea.addEventListener('blur', () => {
-            textarea.style.borderColor = '#8a7a6a';
+            textarea.style.borderColor = 'rgba(143, 176, 255, 0.7)';
         });
 
         textarea.addEventListener('input', () => {
@@ -171,12 +185,12 @@ class PromptScene extends Phaser.Scene {
         this.counterEl.textContent = `${textarea.value.length} / 360 characters`;
         this.counterEl.style.cssText = `
             position: absolute;
-            left: calc(50% + 300px);
-            top: 530px;
+            left: calc(50% + 320px);
+            top: 600px;
             transform: translateX(-50%);
-            font-family: 'Courier New', monospace;
+            font-family: 'Space Grotesk', monospace;
             font-size: 12px;
-            color: #c4a573;
+            color: #9fd6ff;
             z-index: 1000;
             text-align: right;
             width: 120px;
@@ -207,8 +221,8 @@ class PromptScene extends Phaser.Scene {
                 'Please provide more detailed instructions (at least 20 characters)',
                 {
                     fontSize: '16px',
-                    fontFamily: 'monospace',
-                    color: '#ff4444'
+                    fontFamily: 'Space Grotesk',
+                    color: '#ff9aa8'
                 }
             ).setOrigin(0.5);
 

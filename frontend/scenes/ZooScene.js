@@ -9,11 +9,10 @@ class ZooScene extends Phaser.Scene {
         const topColor = this.hexToColor(palette[0]);
         const bottomColor = this.hexToColor(palette[1] || palette[0]);
         const accentColor = this.hexToColor(palette[2] || palette[0]).color;
-        const glowColor = this.hexToColor(palette[3] || '#ffffff').color;
+        const glowColor = this.hexToColor(palette[3] || '#9fb8ff').color;
 
-        // Layered gradient sky
         const gradient = this.add.graphics();
-        for (let i = 0; i <= height; i += 4) {
+        for (let i = 0; i <= height; i += 3) {
             const color = Phaser.Display.Color.Interpolate.ColorWithColor(
                 topColor,
                 bottomColor,
@@ -21,67 +20,50 @@ class ZooScene extends Phaser.Scene {
                 i
             );
             gradient.fillStyle(Phaser.Display.Color.GetColor(color.r, color.g, color.b), 1);
-            gradient.fillRect(0, i, width, 4);
+            gradient.fillRect(0, i, width, 3);
         }
-        gradient.setDepth(-10);
+        gradient.setDepth(-20);
 
-        // Background silhouettes
-        const silhouettes = this.add.graphics();
-        silhouettes.fillStyle(this.hexToColor(palette[0]).color, 0.9);
-        const cageWidth = 140;
-        for (let i = 0; i < width; i += cageWidth + 80) {
-            silhouettes.fillRect(i, height - 220, cageWidth, 220);
-        }
-        silhouettes.fillStyle(this.hexToColor(palette[1] || palette[0]).color, 0.9);
-        silhouettes.fillEllipse(width * 0.2, height - 180, 220, 90);
-        silhouettes.fillEllipse(width * 0.7, height - 200, 260, 110);
-        silhouettes.setDepth(-9);
-
-        // Glowing light beams
-        this.lightBeams = [];
-        for (let i = 0; i < 3; i++) {
-            const beam = this.add.rectangle(
-                200 + i * 320,
-                height / 2,
-                200,
-                height,
-                accentColor,
-                0.08
-            );
-            beam.setAngle(-12 + i * 4);
-            beam.setBlendMode(Phaser.BlendModes.SCREEN);
-            beam.setDepth(-8);
-            this.lightBeams.push(beam);
+        this.parallaxCages = this.add.graphics();
+        this.parallaxCages.setDepth(-19);
+        this.parallaxCages.fillStyle(this.hexToColor(palette[2] || '#3c5e7f').color, 0.4);
+        for (let x = -40; x < width + 40; x += 120) {
+            this.parallaxCages.fillRect(x, height - 260, 70, 260);
         }
 
-        // Floating embers (manual sprites instead of deprecated particle manager)
-        this.floatingLights = [];
-        for (let i = 0; i < 20; i++) {
-            const light = this.add.rectangle(
+        this.moon = this.add.circle(width * 0.8, height * 0.18, 90, glowColor, 0.25)
+            .setStrokeStyle(2, this.hexToColor(palette[4] || '#ffe7b7').color, 0.7)
+            .setDepth(-18);
+
+        this.motes = [];
+        for (let i = 0; i < 32; i++) {
+            const mote = this.add.rectangle(
                 Phaser.Math.Between(0, width),
                 Phaser.Math.Between(0, height),
-                3,
-                12,
+                2,
+                10,
                 glowColor,
-                0.28
+                Phaser.Math.FloatBetween(0.15, 0.35)
             );
-            light.setDepth(-7);
-            this.floatingLights.push(light);
-
+            mote.setDepth(-17);
+            this.motes.push(mote);
             this.tweens.add({
-                targets: light,
-                y: light.y - Phaser.Math.Between(30, 80),
-                alpha: 0,
-                duration: Phaser.Math.Between(4000, 7000),
-                repeat: -1,
+                targets: mote,
+                y: mote.y - Phaser.Math.Between(40, 90),
+                alpha: Phaser.Math.FloatBetween(0.05, 0.25),
+                duration: Phaser.Math.Between(4200, 6800),
                 yoyo: true,
-                delay: Phaser.Math.Between(0, 1500)
+                repeat: -1,
+                ease: 'Sine.easeInOut',
+                delay: Phaser.Math.Between(0, 1400)
             });
         }
 
+        this.fogLayer = this.add.rectangle(width / 2, height - 140, width * 1.4, 300,
+            this.hexToColor(palette[1] || '#1b2440').color, 0.22).setDepth(-16);
+
         this.backgroundLayers = {
-            gradient,
-            silhouettes
+            gradient
         };
     }
 
@@ -101,16 +83,25 @@ class ZooScene extends Phaser.Scene {
     }
 
     setupWorld() {
-        // Set background color based on biome
         this.cameras.main.setBackgroundColor(GameConfig.COLORS.BACKGROUND);
 
-        // Add biome info text
-        this.biomeText = this.add.text(20, 20,
-            `Zone: ${GameState.currentBiome} • Level ${this.levelData.id}: ${this.levelData.title}`, {
-            fontSize: '16px',
-            fontFamily: 'monospace',
-            color: '#c6b28a'
-        }).setDepth(5);
+        this.biomePanel = this.add.rectangle(220, 60, 320, 70, 0x0d1424, 0.78)
+            .setStrokeStyle(2, 0x2c3a57)
+            .setDepth(5);
+
+        this.biomeText = this.add.text(70, 38,
+            `Zone • ${this.levelData.title}`, {
+            fontSize: '18px',
+            fontFamily: 'Space Grotesk',
+            color: '#cdd7ff'
+        }).setDepth(6);
+
+        this.biomeDetail = this.add.text(70, 64,
+            `${this.levelData.enemyType} • ${this.levelData.difficultyTier}`, {
+            fontSize: '14px',
+            fontFamily: 'Space Grotesk',
+            color: '#9fd6ff'
+        }).setDepth(6);
     }
 
     createPlatforms() {
@@ -118,35 +109,98 @@ class ZooScene extends Phaser.Scene {
 
         const worldWidth = this.cameras.main.width;
         const palette = this.getActivePalette();
-        const groundColor = this.hexToColor(palette[1] || '#2a2f3f').color;
-        const platformColor = this.hexToColor(palette[2] || '#3a4358').color;
-        const perchColor = this.hexToColor(palette[3] || '#454f6a').color;
+        const groundColor = this.hexToColor(palette[1] || '#1b2333').color;
+        const platformColor = this.hexToColor(palette[2] || '#2e3f58').color;
+        const perchColor = this.hexToColor(palette[3] || '#4c5d7f').color;
 
-        // Ground
-        const ground = this.add.rectangle(worldWidth / 2, 720, worldWidth, 120, groundColor);
+        const ground = this.add.rectangle(worldWidth / 2, 720, worldWidth, 120, groundColor, 1);
         this.physics.add.existing(ground, true);
         this.platforms.add(ground);
 
-        // Platforms
-        const platform1 = this.add.rectangle(260, 520, 220, 22, platformColor);
+        const platform1 = this.add.rectangle(260, 520, 220, 22, platformColor, 0.95);
         this.physics.add.existing(platform1, true);
         this.platforms.add(platform1);
 
-        const platform2 = this.add.rectangle(worldWidth - 260, 420, 220, 22, platformColor);
+        const platform2 = this.add.rectangle(worldWidth - 260, 420, 220, 22, platformColor, 0.95);
         this.physics.add.existing(platform2, true);
         this.platforms.add(platform2);
 
-        const platform3 = this.add.rectangle(worldWidth / 2, 320, 180, 18, perchColor);
+        const platform3 = this.add.rectangle(worldWidth / 2, 320, 190, 18, perchColor, 0.95);
         this.physics.add.existing(platform3, true);
         this.platforms.add(platform3);
 
-        const platform4 = this.add.rectangle(worldWidth / 2 - 200, 260, 120, 16, perchColor);
+        const platform4 = this.add.rectangle(worldWidth / 2 - 220, 250, 120, 16, perchColor, 0.9);
         this.physics.add.existing(platform4, true);
         this.platforms.add(platform4);
 
-        const platform5 = this.add.rectangle(worldWidth / 2 + 200, 260, 120, 16, perchColor);
+        const platform5 = this.add.rectangle(worldWidth / 2 + 220, 250, 120, 16, perchColor, 0.9);
         this.physics.add.existing(platform5, true);
         this.platforms.add(platform5);
+
+        this.decorateArena();
+    }
+
+    decorateArena() {
+        if (this.decorLayer) {
+            this.decorLayer.destroy(true);
+        }
+
+        this.decorLayer = this.add.container(0, 0).setDepth(-15);
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const palette = this.getActivePalette();
+
+        const graphics = this.add.graphics();
+        graphics.setDepth(-15);
+
+        switch (this.levelData.biome) {
+            case GameConfig.BIOMES.LANTERN_AVIARY:
+                graphics.lineStyle(2, this.hexToColor(palette[4]).color, 0.4);
+                for (let i = 0; i < 6; i++) {
+                    const x = 120 + i * 160;
+                    graphics.lineBetween(x, 120, x + Phaser.Math.Between(-40, 40), 280);
+                }
+                break;
+            case GameConfig.BIOMES.SERPENTARIUM:
+                graphics.fillStyle(0x1d3a35, 0.6);
+                graphics.fillEllipse(width / 2, height - 70, 480, 120);
+                graphics.fillStyle(0x35a388, 0.35);
+                graphics.fillEllipse(width / 2 + 140, height - 60, 260, 80);
+                break;
+            case GameConfig.BIOMES.TIDE_PENS:
+                graphics.fillStyle(0x17415c, 0.65);
+                graphics.fillRect(0, height - 90, width, 90);
+                graphics.lineStyle(3, 0x3a83b7, 0.6);
+                for (let i = 0; i < width; i += 60) {
+                    graphics.strokeCircle(i, height - 90, Phaser.Math.Between(6, 16));
+                }
+                break;
+            case GameConfig.BIOMES.THORN_SANCTUM:
+                graphics.lineStyle(4, 0x567345, 0.6);
+                for (let i = 0; i < 12; i++) {
+                    const x = Phaser.Math.Between(60, width - 60);
+                    graphics.beginPath();
+                    graphics.moveTo(x, height);
+                    graphics.lineTo(x + Phaser.Math.Between(-40, 40), height - 200);
+                    graphics.lineTo(x + Phaser.Math.Between(-20, 20), height - 300);
+                    graphics.strokePath();
+                }
+                break;
+            case GameConfig.BIOMES.CROWN_CHAMBER:
+                graphics.lineStyle(3, 0xc997ff, 0.5);
+                for (let i = 0; i < 5; i++) {
+                    const startX = Phaser.Math.Between(80, width - 80);
+                    graphics.beginPath();
+                    graphics.moveTo(startX, height - 120);
+                    graphics.lineTo(startX + Phaser.Math.Between(-80, 80), height - 260);
+                    graphics.strokePath();
+                }
+                graphics.fillStyle(0x3d2748, 0.4);
+                graphics.fillCircle(width / 2, 160, 120);
+                break;
+        }
+
+        this.decorLayer.add(graphics);
     }
 
     createPlayer() {
@@ -163,60 +217,71 @@ class ZooScene extends Phaser.Scene {
     }
 
     setupUI() {
-        // Display user's tactical prompt
-        this.promptDisplay = this.add.text(20, 50,
-            `Instructions: ${GameState.missionPrompt.substring(0, 100)}${GameState.missionPrompt.length > 100 ? '...' : ''}`,
-            {
-                fontSize: '14px',
-                fontFamily: 'monospace',
-                color: '#8a7a6a',
-                backgroundColor: 'rgba(26, 26, 46, 0.7)',
-                padding: { x: 10, y: 8 },
-                wordWrap: { width: 800 }
-            }
-        ).setDepth(5);
+        const width = this.cameras.main.width;
 
-        // Create AI thought panel
+        const promptPanel = this.add.rectangle(width / 2, 84, 720, 100, 0x0d1424, 0.82)
+            .setStrokeStyle(2, 0x2c3a57)
+            .setDepth(12);
+
+        this.promptDisplay = this.add.text(width / 2, 84,
+            GameState.missionPrompt ? GameState.missionPrompt : 'No instructions received — RooKnight will improvise.', {
+            fontSize: '16px',
+            fontFamily: 'Space Grotesk',
+            color: '#f5ead4',
+            align: 'center',
+            wordWrap: { width: 660 }
+        }).setOrigin(0.5).setDepth(13);
+
         this.thoughtPanel = new AIThoughtPanel(this);
 
-        this.levelBadge = this.add.text(20, 150,
-            `Difficulty: ${this.levelData.title}\n${this.levelData.description}`, {
+        this.runes = new MentorRunes(this);
+
+        this.levelBadge = this.add.text(width - 320, 32,
+            `${this.levelData.description}`, {
             fontSize: '14px',
-            fontFamily: 'monospace',
-            color: '#9ab4ff',
-            backgroundColor: 'rgba(10,10,20,0.7)',
-            padding: { x: 10, y: 6 }
-        }).setDepth(5);
+            fontFamily: 'Space Grotesk',
+            color: '#ffd7a8',
+            wordWrap: { width: 280 }
+        }).setDepth(12);
 
-        // Create health bars
-        this.playerHealthBar = new HealthBar(this, 20, 110, this.player.health, 'RooKnight');
-        this.enemyHealthBar = new HealthBar(this, this.cameras.main.width - 280, 110, this.enemy.health, this.enemy.enemyType);
+        this.playerHealthBar = new HealthBar(this, 30, 120, this.player.health, 'RooKnight');
+        this.enemyHealthBar = new HealthBar(this, width - 270, 120, this.enemy.health, this.enemy.enemyType);
 
-        // Combo display with glow
-        this.comboGlow = this.add.circle(this.cameras.main.width / 2, 30, 80, 0xffdd00, 0);
-        this.comboGlow.setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+        this.comboGlow = this.add.circle(width / 2, 40, 80, 0x9fd6ff, 0).setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
 
-        this.comboText = this.add.text(this.cameras.main.width / 2, 30, '', {
-            fontSize: '36px',
-            fontFamily: 'Impact, monospace',
-            color: '#ffdd00',
+        this.comboText = this.add.text(width / 2, 40, '', {
+            fontSize: '34px',
+            fontFamily: 'Space Grotesk',
+            color: '#cdd7ff',
             fontStyle: 'bold',
-            stroke: '#ff4400',
-            strokeThickness: 6
-        }).setOrigin(0.5).setDepth(10).setAlpha(0);
+            stroke: '#2c3a57',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(15).setAlpha(0);
     }
 
     setupAI() {
-        // AI decision loop
-        const interval = (this.levelData.modifiers?.aiInterval) || GameConfig.AI_DECISION_INTERVAL;
-        this.aiDecisionTimer = this.time.addEvent({
-            delay: interval,
-            callback: this.makeAIDecision,
-            callbackScope: this,
-            loop: true
-        });
-
+        this.aiDecisionInterval = (this.levelData.modifiers?.aiInterval) || GameConfig.AI_DECISION_INTERVAL;
         this.lastDecision = null;
+        this.scheduleNextDecision();
+    }
+
+    scheduleNextDecision() {
+        if (this.aiDecisionTimer) {
+            this.aiDecisionTimer.remove(false);
+        }
+        const jitter = Phaser.Math.Between(-160, 220);
+        const delay = Phaser.Math.Clamp(this.aiDecisionInterval + jitter, 360, 1800);
+        this.aiDecisionTimer = this.time.addEvent({
+            delay,
+            callback: async () => {
+                await this.makeAIDecision();
+                if (!this.battleEnded) {
+                    this.scheduleNextDecision();
+                }
+            },
+            callbackScope: this,
+            loop: false
+        });
     }
 
     setupInput() {
@@ -268,7 +333,8 @@ class ZooScene extends Phaser.Scene {
         const environment = {
             zone: GameState.currentBiome,
             lighting: 'dim',
-            hazards: 'none'
+            hazards: 'dynamic',
+            runes: { ...GameState.coaching }
         };
 
         // Get recent memories (last 5)
@@ -285,8 +351,7 @@ class ZooScene extends Phaser.Scene {
 
         this.lastDecision = decision;
 
-        // Display AI reasoning
-        this.thoughtPanel.showThought(decision.reasoning, decision.confidence);
+        this.thoughtPanel.showThought(decision);
 
         // Execute the decision
         this.executeAIAction(decision.action);
@@ -422,14 +487,17 @@ class ZooScene extends Phaser.Scene {
     }
 
     animateBackground(time) {
-        if (this.lightBeams) {
-            this.lightBeams.forEach((beam, index) => {
-                beam.alpha = 0.08 + Math.sin(time * 0.0005 + index) * 0.02;
-            });
+        if (this.parallaxCages) {
+            this.parallaxCages.x = Math.sin(time * 0.0002) * 12;
         }
 
-        if (this.backgroundLayers?.silhouettes) {
-            this.backgroundLayers.silhouettes.x = Math.sin(time * 0.0002) * 8;
+        if (this.moon) {
+            this.moon.y = this.cameras.main.height * 0.18 + Math.sin(time * 0.0003) * 6;
+        }
+
+        if (this.fogLayer) {
+            this.fogLayer.x = this.cameras.main.width / 2 + Math.sin(time * 0.00025) * 30;
+            this.fogLayer.alpha = 0.18 + Math.sin(time * 0.0005) * 0.06;
         }
     }
 
@@ -628,17 +696,17 @@ class ZooScene extends Phaser.Scene {
 
                 // Color shift for high combos
                 if (combo.count >= 5) {
-                    this.comboText.setColor('#ff00ff');
-                    this.comboText.setStroke('#ff0000', 6);
-                    if (this.comboGlow) this.comboGlow.setFillStyle(0xff00ff);
+                    this.comboText.setColor('#c997ff');
+                    this.comboText.setStroke('#4b2a60', 5);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0xc997ff);
                 } else if (combo.count >= 3) {
-                    this.comboText.setColor('#ff8800');
-                    this.comboText.setStroke('#ff4400', 6);
-                    if (this.comboGlow) this.comboGlow.setFillStyle(0xff8800);
+                    this.comboText.setColor('#8fb0ff');
+                    this.comboText.setStroke('#2c3a57', 5);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0x8fb0ff);
                 } else {
-                    this.comboText.setColor('#ffdd00');
-                    this.comboText.setStroke('#ff4400', 6);
-                    if (this.comboGlow) this.comboGlow.setFillStyle(0xffdd00);
+                    this.comboText.setColor('#ffd7a8');
+                    this.comboText.setStroke('#59402d', 4);
+                    if (this.comboGlow) this.comboGlow.setFillStyle(0xffd7a8);
                 }
             } else {
                 this.comboText.setAlpha(Math.max(0, this.comboText.alpha - 0.02));
@@ -672,7 +740,8 @@ class ZooScene extends Phaser.Scene {
     }
 
     getActivePalette() {
-        const palette = GameConfig.PALETTES?.[GameState.currentBiome] || GameConfig.PALETTES.RooSanctum;
+        const fallback = Object.values(GameConfig.PALETTES)[0];
+        const palette = GameConfig.PALETTES?.[GameState.currentBiome] || fallback;
         return palette;
     }
 

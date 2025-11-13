@@ -16,32 +16,30 @@ class HealthBar {
 
     createUI() {
         // Name label
-        this.nameText = this.scene.add.text(this.x, this.y - 10, this.entityName, {
-            fontSize: '14px',
-            fontFamily: 'monospace',
-            color: '#c4a573'
+        this.nameText = this.scene.add.text(this.x, this.y - 16, this.entityName, {
+            fontSize: '15px',
+            fontFamily: 'Space Grotesk',
+            color: '#cdd7ff'
         });
 
-        // Health bar background
-        this.barBg = this.scene.add.rectangle(this.x, this.y + 10, 250, 20, 0x1a1d2a);
-        this.barBg.setOrigin(0, 0);
-        this.barBg.setStrokeStyle(2, 0x4a4a6a);
+        this.shell = this.scene.add.rectangle(this.x - 6, this.y + 12, 264, 28, 0x0d1424, 0.88)
+            .setOrigin(0, 0.5)
+            .setStrokeStyle(2, 0x2c3a57);
 
-        // Damage trail bar
-        this.damageOverlay = this.scene.add.rectangle(this.x + 2, this.y + 12, 246, 16, 0xa44a3a, 0.5);
-        this.damageOverlay.setOrigin(0, 0);
+        this.barBg = this.scene.add.rectangle(this.x, this.y + 12, 240, 18, 0x1b2338, 0.9)
+            .setOrigin(0, 0.5);
 
-        // Health bar fill
-        this.barFill = this.scene.add.rectangle(this.x + 2, this.y + 12, 246, 16, 0x6aa44a);
-        this.barFill.setOrigin(0, 0);
+        this.damageOverlay = this.scene.add.rectangle(this.x, this.y + 12, 240, 18, 0xff9aa8, 0.35)
+            .setOrigin(0, 0.5);
 
-        // Health text
-        this.healthText = this.scene.add.text(this.x + 125, this.y + 20, `${this.currentHealth}/${this.maxHealth}`, {
+        this.barFill = this.scene.add.rectangle(this.x, this.y + 12, 240, 18, 0x8ce8c1, 0.95)
+            .setOrigin(0, 0.5);
+
+        this.healthText = this.scene.add.text(this.x + 120, this.y + 12, `${this.currentHealth}/${this.maxHealth}`, {
             fontSize: '12px',
-            fontFamily: 'monospace',
-            color: '#ffffff'
-        });
-        this.healthText.setOrigin(0.5);
+            fontFamily: 'Space Grotesk',
+            color: '#f5ead4'
+        }).setOrigin(0.5);
     }
 
     update(health) {
@@ -53,19 +51,19 @@ class HealthBar {
         this.smoothPercent = Phaser.Math.Linear(this.smoothPercent, targetPercent, 0.25);
         this.damagePercent = Phaser.Math.Linear(this.damagePercent, targetPercent, 0.08);
 
-        this.barFill.width = 246 * this.smoothPercent;
-        this.damageOverlay.width = 246 * this.damagePercent;
+        this.barFill.width = 240 * this.smoothPercent;
+        this.damageOverlay.width = 240 * this.damagePercent;
 
         // Update text
         this.healthText.setText(`${Math.round(this.currentHealth)}/${this.maxHealth}`);
 
         // Change color based on health percentage
         if (targetPercent > 0.6) {
-            this.barFill.setFillStyle(0x6aa44a); // Green
+            this.barFill.setFillStyle(0x8ce8c1);
         } else if (targetPercent > 0.3) {
-            this.barFill.setFillStyle(0xc4a573); // Yellow
+            this.barFill.setFillStyle(0xffd48f);
         } else {
-            this.barFill.setFillStyle(0xa44a3a); // Red
+            this.barFill.setFillStyle(0xff9aa8);
         }
 
         // Pulse effect when low health
@@ -82,6 +80,7 @@ class HealthBar {
 
     destroy() {
         this.nameText.destroy();
+        this.shell.destroy();
         this.barBg.destroy();
         this.barFill.destroy();
         this.damageOverlay.destroy();

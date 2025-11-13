@@ -6,212 +6,313 @@ class MenuScene extends Phaser.Scene {
     create() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
-        this.createBackdrop(width, height);
 
         this.selectedLevelIndex = Math.min(
             GameState.currentLevelIndex || 0,
             GameState.unlockedLevelCount - 1
         );
 
-        // Title
-        const title = this.add.text(width / 2, 80, 'HOLLOW ZOO', {
-            fontSize: '64px',
-            fontFamily: 'monospace',
-            color: '#8a7a6a',
-            stroke: '#1a1a2e',
-            strokeThickness: 6
+        const initialLevel = GameConfig.LEVELS[this.selectedLevelIndex];
+        this.createBackdrop(width, height, initialLevel);
+
+        const title = this.add.text(width / 2, 86, 'HOLLOW ZOO', {
+            fontSize: '66px',
+            fontFamily: 'IM Fell English SC, serif',
+            color: '#f5ead4',
+            shadow: { offsetX: 0, offsetY: 10, color: '#05060f', blur: 16, fill: true }
         }).setOrigin(0.5);
 
-        this.add.text(width / 2, 140, 'AI Awakening', {
-            fontSize: '28px',
-            fontFamily: 'monospace',
-            color: '#c4a573'
+        this.add.text(width / 2, 140, 'Moonlit Escape Ledger', {
+            fontSize: '26px',
+            fontFamily: 'Space Grotesk',
+            color: '#aab8e8',
+            letterSpacing: 4
         }).setOrigin(0.5);
 
-        // Level grid
         this.renderLevelCards(width, height);
 
-        // Info + controls
-        this.infoText = this.add.text(width / 2, height - 150, '', {
-            fontSize: '18px',
-            fontFamily: 'monospace',
-            color: '#b8b8d0',
-            align: 'center',
-            wordWrap: { width: 720 }
-        }).setOrigin(0.5);
+        this.infoPanel = this.add.rectangle(width / 2, height - 235, 880, 160, 0x101625, 0.88)
+            .setStrokeStyle(2, 0x3b4b6b)
+            .setDepth(5);
 
-        this.progressText = this.add.text(width / 2, height - 100,
-            `Unlocked Levels: ${GameState.unlockedLevelCount}/${GameConfig.LEVELS.length}`, {
+        this.infoTitle = this.add.text(width / 2 - 400, height - 295, '', {
+            fontSize: '20px',
+            fontFamily: 'Space Grotesk',
+            color: '#cdd7ff'
+        }).setDepth(6);
+
+        this.infoText = this.add.text(width / 2 - 400, height - 265, '', {
             fontSize: '16px',
-            fontFamily: 'monospace',
-            color: '#6a6a8a'
+            fontFamily: 'Space Grotesk',
+            color: '#f1e8d4',
+            wordWrap: { width: 820 }
+        }).setDepth(6);
+
+        this.promptHint = this.add.text(width / 2 - 400, height - 200, '', {
+            fontSize: '15px',
+            fontFamily: 'Space Grotesk',
+            color: '#9fd6ff',
+            wordWrap: { width: 820 }
+        }).setDepth(6);
+
+        this.progressText = this.add.text(width / 2, height - 60,
+            `Escapes Planned: ${GameState.unlockedLevelCount}/${GameConfig.LEVELS.length} • Memories Archived: ${GameState.memory.length}`, {
+            fontSize: '16px',
+            fontFamily: 'Space Grotesk',
+            color: '#7c8baa'
         }).setOrigin(0.5);
 
-        const stats = this.add.text(width / 2, height - 60,
-            `Battles Won: ${GameState.battlesWon} | Lost: ${GameState.battlesLost} | Memories: ${GameState.memory.length}`, {
-            fontSize: '14px',
-            fontFamily: 'monospace',
-            color: '#4a4a6a'
-        }).setOrigin(0.5);
+        this.startButton = this.add.rectangle(width / 2, height - 120, 320, 66, 0x1b2134, 0.94)
+            .setStrokeStyle(2, 0x8fb0ff)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(10);
 
-        // Start button
-        this.startButton = this.add.rectangle(width / 2, height - 20, 320, 60, 0x2a2a4a)
-            .setInteractive({ useHandCursor: true }).setOrigin(0.5, 1);
-        this.startButtonText = this.add.text(width / 2, height - 50, 'START MISSION', {
-            fontSize: '26px',
-            fontFamily: 'monospace',
-            color: '#ffffff',
+        const glyph = this.add.graphics({ x: width / 2 - 150, y: height - 120 });
+        glyph.fillStyle(0x8fb0ff, 0.25).fillCircle(0, 0, 28);
+        glyph.lineStyle(2, 0xbfd6ff, 0.6).strokeCircle(0, 0, 28);
+        glyph.setDepth(11);
+
+        this.startButtonText = this.add.text(width / 2 + 10, height - 120, 'Commit to Briefing', {
+            fontSize: '24px',
+            fontFamily: 'Space Grotesk',
+            color: '#f5ead4',
             fontStyle: 'bold'
-        }).setOrigin(0.5);
+        }).setOrigin(0, 0.5).setDepth(11);
 
         this.startButton.on('pointerdown', () => {
             if (!this.canLaunchSelectedLevel()) {
-                this.showToast('Complete the previous mission to unlock this level.');
+                this.showToast('Conquer the prior warden to unseal this gate.');
                 return;
             }
             GameState.currentLevelIndex = this.selectedLevelIndex;
             this.scene.start('PromptScene');
         });
 
-        this.startButton.on('pointerover', () => this.startButton.setFillStyle(0x3a3a5a));
-        this.startButton.on('pointerout', () => this.startButton.setFillStyle(0x2a2a4a));
-
-        // helper toast text
-        this.toastText = this.add.text(width / 2, height - 200, '', {
-            fontSize: '16px',
-            fontFamily: 'monospace',
-            color: '#ffae8a',
-            backgroundColor: 'rgba(42,42,74,0.8)',
-            padding: { x: 10, y: 4 }
-        }).setOrigin(0.5).setAlpha(0);
-
-        // Animate title
-        this.tweens.add({
-            targets: title,
-            scaleX: 1.05,
-            scaleY: 1.05,
-            duration: 2000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
+        this.startButton.on('pointerover', () => {
+            this.startButton.setFillStyle(0x262f47, 0.96);
+            this.startButton.setStrokeStyle(2, 0xc8d6ff, 0.8);
         });
+        this.startButton.on('pointerout', () => {
+            this.startButton.setFillStyle(0x1b2134, 0.94);
+            this.startButton.setStrokeStyle(2, 0x8fb0ff);
+        });
+
+        this.toastText = this.add.text(width / 2, height - 160, '', {
+            fontSize: '16px',
+            fontFamily: 'Space Grotesk',
+            color: '#ffd7a8',
+            backgroundColor: 'rgba(27,33,52,0.85)',
+            padding: { x: 12, y: 6 }
+        }).setOrigin(0.5).setAlpha(0);
 
         this.updateLevelInfo();
     }
 
-    createBackdrop(width, height) {
-        const palette = GameConfig.PALETTES?.RooSanctum || ['#051923', '#2A2F4F', '#8F3985'];
+    createBackdrop(width, height, level) {
+        const palette = GameConfig.PALETTES[level?.biome] || Object.values(GameConfig.PALETTES)[0];
+
         const gradient = this.add.graphics();
-        const topColor = Phaser.Display.Color.HexStringToColor(palette[0]);
-        const bottomColor = Phaser.Display.Color.HexStringToColor(palette[1] || palette[0]);
-        for (let i = 0; i <= height; i += 6) {
-            const color = Phaser.Display.Color.Interpolate.ColorWithColor(
-                topColor,
-                bottomColor,
+        for (let i = 0; i <= height; i += 4) {
+            const c = Phaser.Display.Color.Interpolate.ColorWithColor(
+                Phaser.Display.Color.HexStringToColor(palette[0]),
+                Phaser.Display.Color.HexStringToColor(palette[1] || palette[0]),
                 height,
                 i
             );
-            gradient.fillStyle(Phaser.Display.Color.GetColor(color.r, color.g, color.b), 1);
-            gradient.fillRect(0, i, width, 6);
+            gradient.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
+            gradient.fillRect(0, i, width, 4);
         }
-        gradient.setDepth(-20);
+        gradient.setDepth(-30);
 
-        const accentColor = Phaser.Display.Color.HexStringToColor(palette[2] || '#8F3985').color;
-        this.orbiters = [];
-        for (let i = 0; i < 12; i++) {
-            const orb = this.add.circle(
-                Phaser.Math.Between(0, width),
-                Phaser.Math.Between(0, height),
-                Phaser.Math.Between(2, 4),
-                accentColor,
-                0.3
+        this.parallaxLayers = [];
+
+        this.moon = this.add.circle(width * 0.82, height * 0.2, 80, Phaser.Display.Color.HexStringToColor(palette[3] || '#9fb8ff').color, 0.4);
+        this.moon.setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(palette[4] || '#ffe7b7').color, 0.6);
+        this.moon.setDepth(-25);
+        this.parallaxLayers.push({ node: this.moon, axis: 'y', amplitude: 8, base: this.moon.y });
+
+        this.parallaxBars = this.add.graphics();
+        this.parallaxBars.setDepth(-24);
+        this.parallaxBars.lineStyle(2, Phaser.Display.Color.HexStringToColor(palette[2] || '#3c5e7f').color, 0.6);
+        for (let x = 0; x <= width; x += 80) {
+            this.parallaxBars.lineBetween(x, height, x + 40, height - 220);
+        }
+        this.parallaxLayers.push({ node: this.parallaxBars, axis: 'x', amplitude: 14, base: this.parallaxBars.x || 0 });
+
+        this.lanternGroup = [];
+        for (let i = 0; i < 7; i++) {
+            const lantern = this.add.rectangle(
+                Phaser.Math.Between(80, width - 80),
+                Phaser.Math.Between(140, 360),
+                14,
+                36,
+                Phaser.Display.Color.HexStringToColor(palette[4] || '#ffe7b7').color,
+                0.45
             );
-            orb.setDepth(-19);
-            this.orbiters.push(orb);
+            lantern.setDepth(-22);
+            lantern.setAngle(Phaser.Math.Between(-6, 6));
             this.tweens.add({
-                targets: orb,
-                x: orb.x + Phaser.Math.Between(-30, 30),
-                y: orb.y + Phaser.Math.Between(-30, 30),
-                duration: Phaser.Math.Between(4000, 6000),
+                targets: lantern,
+                angle: lantern.angle + Phaser.Math.Between(-4, 4),
+                duration: Phaser.Math.Between(2800, 4200),
                 yoyo: true,
                 repeat: -1,
                 ease: 'Sine.easeInOut',
-                delay: Phaser.Math.Between(0, 1500)
+                delay: Phaser.Math.Between(0, 1600)
             });
+            this.lanternGroup.push(lantern);
         }
 
-        this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.2).setDepth(-18);
+        this.fog = this.add.rectangle(width / 2, height - 120, width * 1.2, 260,
+            Phaser.Display.Color.HexStringToColor(palette[1] || '#1b2440').color, 0.22);
+        this.fog.setDepth(-21);
+
+        this.backgroundGradient = gradient;
     }
 
     renderLevelCards(width, height) {
         this.levelCards = [];
         const startX = width / 2 - 360;
-        const startY = height / 2 - 40;
+        const startY = height / 2 - 30;
         const spacing = 180;
 
         GameConfig.LEVELS.forEach((level, index) => {
             const x = startX + index * spacing;
-            const card = this.add.rectangle(x, startY, 160, 200, 0x1c1f33, 0.8)
-                .setStrokeStyle(2, 0x35395a)
-                .setInteractive({ useHandCursor: true });
-
+            const container = this.add.container(x, startY).setSize(160, 220);
             const locked = index >= GameState.unlockedLevelCount;
             const completed = GameState.levelHistory[index]?.result === 'victory';
 
-            const title = this.add.text(x, startY - 70, `LEVEL ${level.id}`, {
-                fontSize: '18px',
-                fontFamily: 'monospace',
-                color: locked ? '#555575' : '#c4a573'
+            const parchment = this.add.rectangle(0, 0, 160, 220, 0x141b2c, locked ? 0.55 : 0.92)
+                .setStrokeStyle(2, locked ? 0x2c334a : 0x546a9c)
+                .setOrigin(0.5);
+
+            const glow = this.add.rectangle(0, 0, 160, 220, 0xa8c0ff, 0.12)
+                .setOrigin(0.5)
+                .setVisible(false);
+
+            const title = this.add.text(0, -80, `Warden ${level.id}`, {
+                fontSize: '17px',
+                fontFamily: 'Space Grotesk',
+                color: locked ? '#516085' : '#9eb4ff'
             }).setOrigin(0.5);
 
-            const subtitle = this.add.text(x, startY - 40, level.title, {
+            const subtitle = this.add.text(0, -42, level.title, {
                 fontSize: '16px',
-                fontFamily: 'monospace',
-                color: locked ? '#6a6a8a' : '#e0e0e0',
+                fontFamily: 'Space Grotesk',
+                color: locked ? '#616b84' : '#f5ead4',
+                align: 'center',
+                wordWrap: { width: 130 }
+            }).setOrigin(0.5);
+
+            const enemy = this.add.text(0, 0, level.enemyType, {
+                fontSize: '14px',
+                fontFamily: 'Space Grotesk',
+                color: locked ? '#6b768c' : '#b8c5ff',
                 align: 'center',
                 wordWrap: { width: 140 }
             }).setOrigin(0.5);
 
-            if (locked) {
-                this.add.text(x, startY + 40, '🔒', {
-                    fontSize: '40px'
-                }).setOrigin(0.5);
-            } else if (completed) {
-                this.add.text(x, startY + 40, '✓', {
-                    fontSize: '42px',
-                    color: '#6aff6a'
-                }).setOrigin(0.5);
-            } else {
-                this.add.text(x, startY + 40, '⚔️', {
-                    fontSize: '32px'
-                }).setOrigin(0.5);
-            }
+            const tier = this.add.text(0, 46, level.difficultyTier || '', {
+                fontSize: '13px',
+                fontFamily: 'Space Grotesk',
+                color: locked ? '#6e6e88' : '#ffd7a8'
+            }).setOrigin(0.5);
 
-            card.on('pointerdown', () => {
+            const badge = completed ? '✦' : locked ? '✖' : '➤';
+            const badgeColor = completed ? '#8ce8c1' : locked ? '#7a7a92' : '#ffd48f';
+            const status = this.add.text(0, 82, badge, {
+                fontSize: '30px',
+                fontFamily: 'Space Grotesk',
+                color: badgeColor
+            }).setOrigin(0.5);
+
+            container.add([parchment, glow, title, subtitle, enemy, tier, status]);
+
+            container.setInteractive(new Phaser.Geom.Rectangle(-80, -110, 160, 220), Phaser.Geom.Rectangle.Contains);
+            container.on('pointerdown', () => {
                 if (locked) {
                     this.showToast(level.unlockText);
                     return;
                 }
                 this.selectedLevelIndex = index;
                 GameState.currentLevelIndex = index;
+                this.updateBackdropForLevel(level);
                 this.updateLevelSelection();
                 this.updateLevelInfo();
             });
 
-            this.levelCards.push({ card, title, subtitle, index, locked });
+            container.on('pointerover', () => {
+                if (!locked) {
+                    glow.setVisible(true);
+                }
+            });
+
+            container.on('pointerout', () => glow.setVisible(false));
+
+            this.levelCards.push({ container, parchment, glow, locked, index });
         });
 
         this.updateLevelSelection();
     }
 
+    updateBackdropForLevel(level) {
+        if (!level) return;
+        const palette = GameConfig.PALETTES[level.biome] || Object.values(GameConfig.PALETTES)[0];
+        const color = Phaser.Display.Color.HexStringToColor(palette[4] || '#ffe7b7').color;
+
+        if (this.backgroundGradient) {
+            const { width, height } = this.cameras.main;
+            this.backgroundGradient.clear();
+            for (let i = 0; i <= height; i += 3) {
+                const mix = Phaser.Display.Color.Interpolate.ColorWithColor(
+                    Phaser.Display.Color.HexStringToColor(palette[0]),
+                    Phaser.Display.Color.HexStringToColor(palette[1] || palette[0]),
+                    height,
+                    i
+                );
+                this.backgroundGradient.fillStyle(Phaser.Display.Color.GetColor(mix.r, mix.g, mix.b), 1);
+                this.backgroundGradient.fillRect(0, i, width, 3);
+            }
+        }
+
+        if (this.lanternGroup) {
+            this.lanternGroup.forEach((lantern, idx) => {
+                lantern.fillColor = color;
+                lantern.alpha = 0.35 + (idx % 3) * 0.1;
+            });
+        }
+
+        if (this.moon) {
+            this.moon.fillColor = Phaser.Display.Color.HexStringToColor(palette[3] || '#9fb8ff').color;
+            this.moon.setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(palette[4] || '#ffe7b7').color, 0.6);
+        }
+
+        if (this.parallaxBars) {
+            const { width, height } = this.cameras.main;
+            this.parallaxBars.clear();
+            this.parallaxBars.lineStyle(2, Phaser.Display.Color.HexStringToColor(palette[2] || '#3c5e7f').color, 0.6);
+            for (let x = 0; x <= width; x += 80) {
+                this.parallaxBars.lineBetween(x, height, x + 40, height - 220);
+            }
+        }
+
+        if (this.fog) {
+            this.fog.fillColor = Phaser.Display.Color.HexStringToColor(palette[1] || '#1b2440').color;
+        }
+    }
+
     updateLevelSelection() {
-        this.levelCards.forEach(({ card, index, locked }) => {
+        this.levelCards.forEach(({ container, parchment, glow, locked, index }) => {
             if (locked) {
-                card.setAlpha(0.4);
+                container.setAlpha(0.45);
+                parchment.setStrokeStyle(2, 0x2c334a);
+                glow.setVisible(false);
             } else {
                 const selected = index === this.selectedLevelIndex;
-                card.setAlpha(selected ? 1 : 0.7);
-                card.setStrokeStyle(2, selected ? 0xc4a573 : 0x35395a);
+                container.setAlpha(selected ? 1 : 0.78);
+                parchment.setStrokeStyle(2, selected ? 0xbfd6ff : 0x546a9c);
+                glow.setVisible(selected);
             }
         });
         this.updateStartButtonState();
@@ -222,18 +323,15 @@ class MenuScene extends Phaser.Scene {
         const history = GameState.levelHistory[this.selectedLevelIndex];
 
         const status = history
-            ? `Last run: ${history.result === 'victory' ? 'Victory' : 'Defeat'} in ${history.duration}s`
-            : 'No attempts yet';
+            ? `Last Attempt: ${history.result === 'victory' ? 'Victory' : 'Defeat'} after ${history.duration}s`
+            : 'No attempts yet — parchment uninked.';
 
-        this.infoText.setText(
-            `${level.title} • ${level.description}\nEnemy: ${level.enemyType} • Biome: ${level.biome}\n${status}`
-        );
+        this.infoTitle.setText(`${level.title} • ${level.enemyType}`);
+        this.infoText.setText(`${level.description}\n${status}`);
+        this.promptHint.setText(`Prompt Scaffold: ${level.promptScaffold}\nMentor Hint: ${level.mentorHint}`);
     }
 
     updateStartButtonState() {
-        if (!this.startButton || !this.startButtonText) {
-            return;
-        }
         const canStart = this.canLaunchSelectedLevel();
         this.startButton.setAlpha(canStart ? 1 : 0.5);
         this.startButtonText.setAlpha(canStart ? 1 : 0.5);
@@ -250,9 +348,32 @@ class MenuScene extends Phaser.Scene {
         this.tweens.add({
             targets: this.toastText,
             alpha: 0,
-            duration: 2500,
+            duration: 2400,
             ease: 'Sine.easeOut',
-            delay: 800
+            delay: 900
         });
+    }
+
+    animateBackground(time) {
+        if (this.parallaxLayers) {
+            this.parallaxLayers.forEach(({ node, axis, amplitude, base }, idx) => {
+                const offset = Math.sin(time * 0.0003 + idx) * amplitude;
+                if (!node) return;
+                if (axis === 'y' && typeof node.y === 'number') {
+                    node.y = (base ?? node.y) + offset;
+                } else if (axis === 'x' && typeof node.x === 'number') {
+                    node.x = (base ?? node.x) + offset;
+                }
+            });
+        }
+
+        if (this.fog) {
+            this.fog.x = this.cameras.main.width / 2 + Math.sin(time * 0.0003) * 20;
+            this.fog.alpha = 0.18 + Math.sin(time * 0.0006) * 0.06;
+        }
+    }
+
+    update(time) {
+        this.animateBackground(time);
     }
 }
