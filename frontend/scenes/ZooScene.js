@@ -49,6 +49,9 @@ class ZooScene extends Phaser.Scene {
         this.fogLayer = this.add.rectangle(width / 2, height - 140, width * 1.4, 300,
             MoonlitEnvironment.hexToColor(palette[1] || '#1b2440').color, 0.22).setDepth(-16);
 
+        this.createVolumetricFog(width, height, this.biomeLighting);
+        this.createBiomeLightingOverlay(width, height, this.biomeLighting);
+
         this.backgroundLayers = {
             gradient
         };
@@ -61,6 +64,7 @@ class ZooScene extends Phaser.Scene {
         this.createAtmosphere();
         this.setupWorld();
         this.createPlatforms();
+        this.createHandDrawnForeground();
         this.createPlayer();
         this.createEnemy();
         this.setupUI();

@@ -88,6 +88,29 @@ class MenuScene extends Phaser.Scene {
             GameState.currentLevelIndex = this.selectedLevelIndex;
             this.scene.start('PromptScene');
         });
+        this.infoText = this.missionPanel.body;
+        this.infoText.setFontSize(18);
+        this.infoText.setLineSpacing(6);
+
+        this.progressPanel = this.createParchmentPanel(width / 2, height - 90, 620, 110, {
+            title: 'Campaign Chronicle',
+            icon: '🕯️',
+            depth: 12,
+            align: 'center'
+        });
+        this.progressText = this.progressPanel.body;
+        this.progressText.setFontSize(16);
+        this.progressText.setLineSpacing(4);
+
+        this.toastText = this.add.text(width / 2, height - 320, '', {
+            fontSize: '18px',
+            fontFamily: '"IBM Plex Serif", Georgia, serif',
+            color: '#f7d7a2',
+            backgroundColor: 'rgba(28, 25, 30, 0.7)',
+            padding: { x: 16, y: 8 },
+            wordWrap: { width: 520 },
+            align: 'center'
+        }).setOrigin(0.5).setDepth(20).setAlpha(0);
 
         this.startButton.on('pointerover', () => {
             this.startButton.setFillStyle(0x262f47, 0.96);
@@ -163,6 +186,10 @@ class MenuScene extends Phaser.Scene {
             });
             this.lanternGroup.push(lantern);
         }
+        const nx = Phaser.Math.Clamp(pointer.x / this.sceneSize.width, 0, 1) - 0.5;
+        const ny = Phaser.Math.Clamp(pointer.y / this.sceneSize.height, 0, 1) - 0.5;
+        this.targetBackdropOffset.set(nx * 80, ny * 40);
+    }
 
         this.fog = this.add.rectangle(width / 2, height - 120, width * 1.2, 260,
             MoonlitEnvironment.hexToColor(palette[1] || '#1b2440').color, 0.22);
@@ -182,6 +209,9 @@ class MenuScene extends Phaser.Scene {
             const container = this.add.container(x, startY).setSize(160, 220);
             const locked = index >= GameState.unlockedLevelCount;
             const completed = GameState.levelHistory[index]?.result === 'victory';
+            const card = this.createLevelCard(x, startY, level, index, locked, completed);
+            this.levelCards.push(card);
+        });
 
             const parchment = this.add.rectangle(0, 0, 160, 220, 0x141b2c, locked ? 0.55 : 0.92)
                 .setStrokeStyle(2, locked ? 0x2c334a : 0x546a9c)
@@ -241,6 +271,7 @@ class MenuScene extends Phaser.Scene {
                 this.updateLevelSelection();
                 this.updateLevelInfo();
             });
+        });
 
             container.on('pointerover', () => {
                 if (!locked) {
@@ -253,7 +284,7 @@ class MenuScene extends Phaser.Scene {
             this.levelCards.push({ container, parchment, glow, locked, index });
         });
 
-        this.updateLevelSelection();
+        this.updateStartButtonState();
     }
 
     updateBackdropForLevel(level) {
@@ -333,8 +364,11 @@ class MenuScene extends Phaser.Scene {
 
     updateStartButtonState() {
         const canStart = this.canLaunchSelectedLevel();
-        this.startButton.setAlpha(canStart ? 1 : 0.5);
-        this.startButtonText.setAlpha(canStart ? 1 : 0.5);
+        const alpha = canStart ? 1 : 0.45;
+        this.startButton.setAlpha(alpha);
+        this.startButton.input?.enabled = true; // keep pointer for toast feedback
+        this.startButtonLabel.setColor(canStart ? '#f7f0dc' : '#c9b8a4');
+        this.startButtonSeal.setFillStyle(canStart ? 0x4f1f24 : 0x2f1a21, canStart ? 0.95 : 0.65);
     }
 
     canLaunchSelectedLevel() {
