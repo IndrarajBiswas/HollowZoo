@@ -5,13 +5,13 @@ class ZooScene extends Phaser.Scene {
 
     createAtmosphere() {
         const { width, height } = this.cameras.main;
-        const palette = this.getActivePalette();
+        this.biomeLighting = this.getBiomeLightingCues();
+        const palette = this.biomeLighting.palette || this.getActivePalette();
         const topColor = this.hexToColor(palette[0]);
         const bottomColor = this.hexToColor(palette[1] || palette[0]);
         const accentColor = this.hexToColor(palette[2] || palette[0]).color;
         const glowColor = this.hexToColor(palette[3] || '#ffffff').color;
 
-        // Layered gradient sky
         const gradient = this.add.graphics();
         for (let i = 0; i <= height; i += 4) {
             const color = Phaser.Display.Color.Interpolate.ColorWithColor(
@@ -23,65 +23,263 @@ class ZooScene extends Phaser.Scene {
             gradient.fillStyle(Phaser.Display.Color.GetColor(color.r, color.g, color.b), 1);
             gradient.fillRect(0, i, width, 4);
         }
-        gradient.setDepth(-10);
+        gradient.setDepth(-14);
 
-        // Background silhouettes
-        const silhouettes = this.add.graphics();
-        silhouettes.fillStyle(this.hexToColor(palette[0]).color, 0.9);
-        const cageWidth = 140;
-        for (let i = 0; i < width; i += cageWidth + 80) {
-            silhouettes.fillRect(i, height - 220, cageWidth, 220);
-        }
-        silhouettes.fillStyle(this.hexToColor(palette[1] || palette[0]).color, 0.9);
-        silhouettes.fillEllipse(width * 0.2, height - 180, 220, 90);
-        silhouettes.fillEllipse(width * 0.7, height - 200, 260, 110);
-        silhouettes.setDepth(-9);
-
-        // Glowing light beams
-        this.lightBeams = [];
-        for (let i = 0; i < 3; i++) {
-            const beam = this.add.rectangle(
-                200 + i * 320,
-                height / 2,
-                200,
-                height,
-                accentColor,
-                0.08
+        const starfield = this.add.graphics();
+        for (let i = 0; i < 80; i++) {
+            const radius = Phaser.Math.Between(1, 2);
+            starfield.fillStyle(glowColor, Phaser.Math.FloatBetween(0.06, 0.22));
+            starfield.fillCircle(
+                Phaser.Math.Between(0, width),
+                Phaser.Math.Between(40, height * 0.55),
+                radius
             );
-            beam.setAngle(-12 + i * 4);
+        }
+        starfield.setDepth(-13).setBlendMode(Phaser.BlendModes.SCREEN);
+
+        const menagerie = this.add.graphics();
+        const baseColor = this.hexToColor(palette[0]).color;
+        menagerie.fillStyle(baseColor, 0.92);
+        const enclosureWidth = 160;
+        for (let x = -20; x < width + enclosureWidth; x += enclosureWidth + 60) {
+            const heightOffset = Phaser.Math.Between(160, 260);
+            menagerie.fillRoundedRect(x, height - heightOffset, enclosureWidth, heightOffset + 30, 18);
+        }
+        menagerie.fillStyle(this.hexToColor(palette[1] || palette[0]).color, 0.88);
+        menagerie.fillEllipse(width * 0.25, height - 210, 260, 120);
+        menagerie.fillEllipse(width * 0.68, height - 240, 320, 150);
+        menagerie.setDepth(-12);
+
+        this.lightBeams = [];
+        for (let i = 0; i < 4; i++) {
+            const beam = this.add.rectangle(
+                160 + i * 280,
+                height / 2,
+                220,
+                height * 1.4,
+                accentColor,
+                0.07
+            );
+            beam.setAngle(-14 + i * 6);
             beam.setBlendMode(Phaser.BlendModes.SCREEN);
-            beam.setDepth(-8);
+            beam.setDepth(-11);
             this.lightBeams.push(beam);
         }
 
-        // Floating embers (manual sprites instead of deprecated particle manager)
         this.floatingLights = [];
-        for (let i = 0; i < 20; i++) {
-            const light = this.add.rectangle(
+        for (let i = 0; i < 26; i++) {
+            const mote = this.add.rectangle(
                 Phaser.Math.Between(0, width),
                 Phaser.Math.Between(0, height),
-                3,
-                12,
+                Phaser.Math.Between(2, 4),
+                Phaser.Math.Between(8, 16),
                 glowColor,
-                0.28
+                0.2
             );
-            light.setDepth(-7);
-            this.floatingLights.push(light);
-
+            mote.setDepth(-9).setBlendMode(Phaser.BlendModes.SCREEN);
+            this.floatingLights.push(mote);
             this.tweens.add({
-                targets: light,
-                y: light.y - Phaser.Math.Between(30, 80),
+                targets: mote,
+                y: mote.y - Phaser.Math.Between(40, 120),
                 alpha: 0,
-                duration: Phaser.Math.Between(4000, 7000),
-                repeat: -1,
+                duration: Phaser.Math.Between(4000, 7200),
                 yoyo: true,
-                delay: Phaser.Math.Between(0, 1500)
+                repeat: -1,
+                ease: 'Sine.easeInOut',
+                delay: Phaser.Math.Between(0, 1400)
             });
         }
 
+        this.createVolumetricFog(width, height, this.biomeLighting);
+        this.createBiomeLightingOverlay(width, height, this.biomeLighting);
+
         this.backgroundLayers = {
             gradient,
-            silhouettes
+            starfield,
+            menagerie
+        };
+    }
+
+    createVolumetricFog(width, height, lighting) {
+        this.volumetricFog = [];
+        const fogColors = lighting.fogColors || ['#4b5c70', '#3a4456', '#2a2f3a'];
+
+        fogColors.forEach((hex, index) => {
+            const fogColor = this.hexToColor(hex).color;
+            const fog = this.add.graphics({
+                x: width / 2,
+                y: height - (210 - index * 60)
+            });
+            fog.fillGradientStyle(fogColor, fogColor, fogColor, fogColor,
+                0.14 - index * 0.02,
+                0.12 - index * 0.02,
+                0.08 - index * 0.015,
+                0.06 - index * 0.01
+            );
+            fog.fillEllipse(0, 0, width * (1.4 - index * 0.18), 220 - index * 28);
+            fog.setBlendMode(Phaser.BlendModes.ADD);
+            fog.setDepth(-10 + index);
+
+            this.volumetricFog.push({
+                sprite: fog,
+                baseX: fog.x,
+                baseY: fog.y,
+                sway: 24 + index * 12,
+                speed: 0.0003 + index * 0.00012
+            });
+        });
+    }
+
+    createBiomeLightingOverlay(width, height, lighting) {
+        const overlayColor = this.hexToColor(lighting.overlayColor || '#1d2533').color;
+        const overlayAlpha = lighting.overlayAlpha ?? 0.18;
+        const overlay = this.add.rectangle(width / 2, height / 2, width * 1.2, height * 1.2, overlayColor, overlayAlpha);
+        overlay.setBlendMode(Phaser.BlendModes.SOFT_LIGHT);
+        overlay.setDepth(-7);
+        this.biomeOverlay = overlay;
+    }
+
+    createHandDrawnForeground() {
+        const { width, height } = this.cameras.main;
+        const propsTint = this.biomeLighting?.propsTint || 0x2e2218;
+        const highlightTint = this.biomeLighting?.highlightTint || 0xa67c52;
+
+        this.foregroundDecor = this.add.container(0, 0).setDepth(4);
+
+        const leftSketch = this.add.graphics();
+        leftSketch.lineStyle(6, propsTint, 0.65);
+        leftSketch.beginPath();
+        leftSketch.moveTo(48, height);
+        leftSketch.quadraticCurveTo(140, height - 260, 78, height - 520);
+        leftSketch.quadraticCurveTo(36, height - 600, 60, height - 720);
+        leftSketch.strokePath();
+        leftSketch.fillStyle(propsTint, 0.55);
+        leftSketch.fillCircle(62, height - 420, 28);
+        leftSketch.fillCircle(52, height - 320, 18);
+
+        const rightGates = this.add.graphics();
+        rightGates.lineStyle(5, propsTint, 0.8);
+        rightGates.strokeRoundedRect(width - 140, height - 280, 110, 220, 26);
+        rightGates.lineStyle(3, highlightTint, 0.6);
+        rightGates.strokePath();
+        rightGates.fillStyle(propsTint, 0.45);
+        rightGates.fillRect(width - 124, height - 268, 18, 160);
+        rightGates.fillRect(width - 78, height - 268, 18, 160);
+
+        const signPost = this.add.graphics({ x: width / 2 - 320, y: height - 220 });
+        signPost.fillStyle(propsTint, 0.85);
+        signPost.fillRect(-6, -120, 12, 160);
+        signPost.fillRoundedRect(-120, -160, 240, 90, 18);
+        signPost.lineStyle(3, highlightTint, 0.6);
+        signPost.strokeRoundedRect(-120, -160, 240, 90, 18);
+        const signText = this.add.text(signPost.x, signPost.y - 130, 'Sanctuary Gate', {
+            fontFamily: 'Cinzel Decorative, "IBM Plex Serif", serif',
+            fontSize: '20px',
+            color: '#281a12',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        const hangingLantern = this.add.graphics({ x: width - 220, y: height - 560 });
+        hangingLantern.lineStyle(3, propsTint, 0.7);
+        hangingLantern.beginPath();
+        hangingLantern.moveTo(0, -40);
+        hangingLantern.lineTo(0, 60);
+        hangingLantern.strokePath();
+        hangingLantern.fillStyle(highlightTint, 0.85);
+        hangingLantern.fillRoundedRect(-28, 60, 56, 72, 16);
+        const lanternGlow = this.add.ellipse(width - 220, height - 440, 160, 120, highlightTint, 0.12)
+            .setBlendMode(Phaser.BlendModes.ADD);
+
+        const foregroundMist = this.add.graphics({ x: width / 2, y: height - 40 });
+        const mistColor = this.hexToColor(this.biomeLighting?.foregroundFog || '#9ca9c4').color;
+        foregroundMist.fillGradientStyle(mistColor, mistColor, mistColor, mistColor, 0.2, 0.16, 0.08, 0.05);
+        foregroundMist.fillEllipse(0, 0, width * 1.4, 180);
+        foregroundMist.setBlendMode(Phaser.BlendModes.SCREEN).setAlpha(0.22);
+        this.foregroundFog = foregroundMist;
+
+        this.foregroundDecor.add([
+            leftSketch,
+            rightGates,
+            signPost,
+            signText,
+            hangingLantern,
+            lanternGlow,
+            foregroundMist
+        ]);
+
+        this.tweens.add({
+            targets: lanternGlow,
+            alpha: {
+                getStart: () => 0.1,
+                getEnd: () => 0.24
+            },
+            duration: 2600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    getBiomeLightingCues() {
+        const biome = (GameState.currentBiome || '').toLowerCase();
+        const cues = {
+            desert: {
+                palette: ['#1a0f08', '#342013', '#d6a15b', '#f5deb3'],
+                fogColors: ['#c9924a', '#a96a2c', '#7e4f24'],
+                overlayColor: '#5c371e',
+                overlayAlpha: 0.16,
+                propsTint: 0x5b3a20,
+                highlightTint: 0xf0c07a,
+                foregroundFog: '#d0a87c',
+                platforms: {
+                    ground: '#5b3d28',
+                    platform: '#704d2a',
+                    perch: '#8a6c42'
+                }
+            },
+            rainforest: {
+                palette: ['#04140d', '#123326', '#4ea38a', '#d2f1e4'],
+                fogColors: ['#3c7f68', '#2f6c57', '#1d4c3d'],
+                overlayColor: '#1c3b2e',
+                overlayAlpha: 0.22,
+                propsTint: 0x1d3a2e,
+                highlightTint: 0x7fcbb0,
+                foregroundFog: '#6eb29a',
+                platforms: {
+                    ground: '#264938',
+                    platform: '#1f3a2d',
+                    perch: '#3d5c4a'
+                }
+            },
+            tundra: {
+                palette: ['#0b1320', '#1a2d45', '#6c86b8', '#d6e9ff'],
+                fogColors: ['#9fb8d8', '#6f87aa', '#4b5d79'],
+                overlayColor: '#23354d',
+                overlayAlpha: 0.2,
+                propsTint: 0x2a3a55,
+                highlightTint: 0xb6d4f7,
+                foregroundFog: '#bcd0ea',
+                platforms: {
+                    ground: '#2f3f58',
+                    platform: '#3f5674',
+                    perch: '#546c8c'
+                }
+            }
+        };
+
+        return cues[biome] || {
+            palette: ['#05070c', '#142033', '#3a4d63', '#c7d7f2'],
+            fogColors: ['#54627a', '#3e485a', '#2b333f'],
+            overlayColor: '#1a2534',
+            overlayAlpha: 0.2,
+            propsTint: 0x2e2218,
+            highlightTint: 0xa67c52,
+            foregroundFog: '#9ca9c4',
+            platforms: {
+                ground: '#2a3243',
+                platform: '#394558',
+                perch: '#485369'
+            }
         };
     }
 
@@ -92,6 +290,7 @@ class ZooScene extends Phaser.Scene {
         this.createAtmosphere();
         this.setupWorld();
         this.createPlatforms();
+        this.createHandDrawnForeground();
         this.createPlayer();
         this.createEnemy();
         this.setupUI();
@@ -107,9 +306,16 @@ class ZooScene extends Phaser.Scene {
         // Add biome info text
         this.biomeText = this.add.text(20, 20,
             `Zone: ${GameState.currentBiome} • Level ${this.levelData.id}: ${this.levelData.title}`, {
-            fontSize: '16px',
-            fontFamily: 'monospace',
-            color: '#c6b28a'
+            fontSize: '18px',
+            fontFamily: '"IBM Plex Serif", Georgia, serif',
+            color: '#f1e5cc',
+            shadow: {
+                offsetX: 0,
+                offsetY: 2,
+                color: 'rgba(0,0,0,0.65)',
+                blur: 6,
+                fill: true
+            }
         }).setDepth(5);
     }
 
@@ -117,10 +323,10 @@ class ZooScene extends Phaser.Scene {
         this.platforms = this.physics.add.staticGroup();
 
         const worldWidth = this.cameras.main.width;
-        const palette = this.getActivePalette();
-        const groundColor = this.hexToColor(palette[1] || '#2a2f3f').color;
-        const platformColor = this.hexToColor(palette[2] || '#3a4358').color;
-        const perchColor = this.hexToColor(palette[3] || '#454f6a').color;
+        const palette = this.biomeLighting?.platforms || {};
+        const groundColor = this.hexToColor(palette.ground || '#2a2f3f').color;
+        const platformColor = this.hexToColor(palette.platform || '#3a4358').color;
+        const perchColor = this.hexToColor(palette.perch || '#454f6a').color;
 
         // Ground
         const ground = this.add.rectangle(worldWidth / 2, 720, worldWidth, 120, groundColor);
@@ -167,10 +373,10 @@ class ZooScene extends Phaser.Scene {
         this.promptDisplay = this.add.text(20, 50,
             `Instructions: ${GameState.missionPrompt.substring(0, 100)}${GameState.missionPrompt.length > 100 ? '...' : ''}`,
             {
-                fontSize: '14px',
-                fontFamily: 'monospace',
-                color: '#8a7a6a',
-                backgroundColor: 'rgba(26, 26, 46, 0.7)',
+                fontSize: '16px',
+                fontFamily: '"IBM Plex Serif", Georgia, serif',
+                color: '#f1e8d2',
+                backgroundColor: 'rgba(20, 24, 32, 0.68)',
                 padding: { x: 10, y: 8 },
                 wordWrap: { width: 800 }
             }
@@ -181,10 +387,10 @@ class ZooScene extends Phaser.Scene {
 
         this.levelBadge = this.add.text(20, 150,
             `Difficulty: ${this.levelData.title}\n${this.levelData.description}`, {
-            fontSize: '14px',
-            fontFamily: 'monospace',
-            color: '#9ab4ff',
-            backgroundColor: 'rgba(10,10,20,0.7)',
+            fontSize: '16px',
+            fontFamily: '"IBM Plex Serif", Georgia, serif',
+            color: '#d4e0ff',
+            backgroundColor: 'rgba(14, 18, 30, 0.68)',
             padding: { x: 10, y: 6 }
         }).setDepth(5);
 
@@ -424,12 +630,23 @@ class ZooScene extends Phaser.Scene {
     animateBackground(time) {
         if (this.lightBeams) {
             this.lightBeams.forEach((beam, index) => {
-                beam.alpha = 0.08 + Math.sin(time * 0.0005 + index) * 0.02;
+                beam.alpha = 0.06 + Math.sin(time * 0.0006 + index) * 0.025;
             });
         }
 
-        if (this.backgroundLayers?.silhouettes) {
-            this.backgroundLayers.silhouettes.x = Math.sin(time * 0.0002) * 8;
+        if (this.backgroundLayers?.menagerie) {
+            this.backgroundLayers.menagerie.x = Math.sin(time * 0.00018) * 10;
+        }
+
+        if (this.volumetricFog) {
+            this.volumetricFog.forEach((fog, index) => {
+                fog.sprite.x = fog.baseX + Math.sin(time * fog.speed + index) * fog.sway;
+                fog.sprite.alpha = 0.1 + Math.abs(Math.sin(time * (fog.speed * 1200) + index)) * 0.12;
+            });
+        }
+
+        if (this.foregroundFog) {
+            this.foregroundFog.alpha = 0.18 + Math.sin(time * 0.0008) * 0.06;
         }
     }
 
