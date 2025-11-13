@@ -1,3 +1,27 @@
+// Global game state
+const GameState = {
+    missionPrompt: '',  // User's tactical instructions
+    lastPrompt: '',
+    memory: [],
+    currentBiome: GameConfig.BIOMES.LANTERN_AVIARY,
+    agentLevel: 1,
+    battlesWon: 0,
+    battlesLost: 0,
+    currentLevelIndex: 0,
+    unlockedLevelCount: 1,
+    levelHistory: {},
+    coaching: {
+        aggression: 35,
+        caution: 55,
+        curiosity: 60
+    }
+};
+
+// Expose game state globally for any late-loaded scripts
+if (typeof window !== 'undefined') {
+    window.GameState = GameState;
+}
+
 // Main game initialization
 const config = {
     type: Phaser.AUTO,
@@ -19,52 +43,25 @@ const config = {
 // Create game instance
 const game = new Phaser.Game(config);
 
-// Global game state
-const GameState = {
-    missionPrompt: '',  // User's tactical instructions
-    lastPrompt: '',
-    memory: [],
-    currentBiome: GameConfig.BIOMES.LANTERN_AVIARY,
-    agentLevel: 1,
-    battlesWon: 0,
-    battlesLost: 0,
-    currentLevelIndex: 0,
-    unlockedLevelCount: 1,
-    levelHistory: {},
-    coaching: {
-        aggression: 35,
-        caution: 55,
-        curiosity: 60
+const hideLoadingScreen = (delay = 0) => {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (!loadingScreen) {
+        return;
     }
+
+    setTimeout(() => {
+        loadingScreen.style.transition = 'opacity 0.5s';
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => loadingScreen.classList.add('hidden'), 500);
+    }, delay);
 };
 
-// Hide loading screen when game is ready
-window.addEventListener('load', () => {
-    // Hide loading screen after Phaser fully initializes
-    setTimeout(() => {
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
-            loadingScreen.style.opacity = '0';
-            loadingScreen.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-            }, 500);
-        }
-    }, 1500);  // Reduced from 2000ms to 1500ms
-});
+// Hide loading screen when the page finishes loading
+if (typeof window !== 'undefined') {
+    window.addEventListener('load', () => hideLoadingScreen(1500));
+}
 
-// Also hide loading screen when Phaser is ready
-if (game) {
-    game.events.once('ready', () => {
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                loadingScreen.style.transition = 'opacity 0.5s';
-                setTimeout(() => {
-                    loadingScreen.classList.add('hidden');
-                }, 500);
-            }
-        }, 500);
-    });
+// Also hide loading screen as soon as Phaser reports readiness
+if (game?.events) {
+    game.events.once('ready', () => hideLoadingScreen(500));
 }
